@@ -28,4 +28,29 @@ body {
 .google-map-container {
   width: 100%;
   height: 100vh;
+  z-index: 0;
+
+  .map-options {
+    position: relative !important;
+    display: flex;
+    z-index: 100;
+    height: fit-content;
+    width: fit-content;
+    flex-direction: column;
+
+    .map-button {
+      background-color: black;
+      color: white;
+    }
+
+    .map-button-toggle-on {
+      background-color: black;
+      color: white;
+    }
+
+    .map-button-toggle-off {
+      background-color: white;
+      color: black;
+    }
+  }
 }
