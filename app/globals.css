@@ -25,6 +25,25 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+.button-board {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+
+  .button-container {
+    width: 100%;
+    height: 40%;
+    display: flex;
+    flex-direction: column;
+
+    .button {
+      background-color: black;
+      color: white;
+    }
+  }
+}
+
 .google-map-container {
   width: 100%;
   height: 100vh;

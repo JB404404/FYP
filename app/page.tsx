@@ -1,93 +1,31 @@
 'use client'
-import { GoogleMap, Marker, useJsApiLoader } from '@react-google-maps/api';
 
-const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '';
-let map: any = null;
-let searchMarkers: Array<google.maps.Marker> = [];
+import { redirect } from "next/navigation";
+import Router from "next/router";
+import { useState } from "react";
 
 export default function Home() {
-  const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: API_KEY || '',
-    libraries: ['maps', 'marker']
-  })
 
-  if (!isLoaded) {
-    return <span>Loading</span>
-  } else {
-    return Map() as any as google.maps.MapElement;
+  const [groups, setGroups] = useState([] as any[]);
+
+  const updateGroups = async () => {
+    const response = await fetch("/api/getUserGroups")
+    setGroups((await response.json()).groupInfo)
   }
-}
 
-function Map() {
-  let location = { coords: new google.maps.LatLng({ lat: 51.509865, lng: -0.118092 }) }
-  const geolocation = navigator.geolocation;
-  geolocation?.getCurrentPosition((position) => {
-    location.coords = new google.maps.LatLng(
-      { lat: position.coords.latitude, lng: position.coords.longitude }
-    )
-  });
-
-  let choices = {
-    restaurant: false,
-    park: false,
-    cafe: false
-  };
-
-  return <GoogleMap onLoad={(newMap) => { map = newMap }} id={"1"} zoom={10} center={location.coords} mapContainerClassName='google-map-container'>
-    <Marker position={location.coords}></Marker>
-    <span className='map-options'>
-      <button onClick={async () => { choices.restaurant = !choices.restaurant }} className="map-button-toggle-on">Restaurants</button>
-      <button onClick={async () => { choices.park = !choices.park }} className="map-button-toggle-on">Parks</button>
-      <button onClick={async () => { choices.cafe = !choices.cafe }} className="map-button-toggle-on">Cafe</button>
-
-      <button onClick={async () => { searchNearby(location, choices) }} className="map-button">Search nearby</button>
+  return <span className='button-board'>
+    <span className='button-container'>
+      <button onClick={async () => { window.location.href = "/google-login" }} className="button">Log in with google</button>
+      <button onClick={async () => { fetch("/api/createGroup") }} className="button">Create group</button>
+      <button onClick={async () => { fetch("/api/addUserToGroup") }} className="button">Add to group</button>
+      <button onClick={async () => { fetch("/api/removeUserFromGroup") }} className="button">Remove user from group</button>
+      <button onClick={async () => { updateGroups() }} className="button">Get your groups</button>
+      <button onClick={async () => { fetch("/api/setGroupDestination") }} className="button">Set a group's destination</button>
     </span>
-  </GoogleMap>
-}
-
-async function searchNearby(location: { coords: google.maps.LatLng }, choices: { restaurant: boolean, park: boolean, cafe: boolean }) {
-  if (!Object.values(choices).find((item) => { return item == true })) {
-    console.log("no choices selected")
-    return;
-  };
-
-  const body = {
-    'includedTypes': [...choices.restaurant ? ['restaurant'] : [], ...choices.park ? ['park'] : [], ...choices.cafe ? ['cafe'] : []],
-    'maxResultCount': 10,
-    'locationRestriction': {
-      'circle': {
-        'center': {
-          'latitude': location.coords.lat(),
-          'longitude': location.coords.lng()
-        },
-        'radius': 500.0
-      }
-    }
-  }
-
-  // console.log("cancelling request to minimize API requests from testing")
-  // return
-
-  let response = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
-    method: 'POST',
-    body: JSON.stringify(body),
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Goog-Api-Key': API_KEY,
-      'X-Goog-FieldMask': 'places.displayName,places.location'
-    }
-  })
-  let responseJson = await response.json()
-  console.log(responseJson)
-  let places: Array<{ displayName: { text: string }, location: { latitude: number, longitude: number } }> = responseJson.places
-  places.forEach((place) => {
-    searchMarkers.push(
-      new google.maps.Marker({
-        position: new google.maps.LatLng({ lat: place.location.latitude, lng: place.location.longitude }),
-        map: map,
-        title: place.displayName.text
-      })
-    )
-  })
+    <span className='button-container'>
+      {groups.map((item, index) => (
+        <button className="button" key={index} onClick={() => (redirect(`/map?id=${item.id}&lat=${item?.destinationLatLng[0] || 0}&lng=${item?.destinationLatLng[1] || 0}`))}>{item.name}</button>
+      ))}
+    </span>
+  </span>
 }
