@@ -5,12 +5,11 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
 
     const groupId = searchParams.get("group")
-    const lat = searchParams.get("lat")
-    const lng = searchParams.get("lng")
-    let response = await fetch("https://fyp-project-58d2d.web.app/api/setGroupDestination", {
+    const arrivalTime = searchParams.get("arrivalTime")
+    let response = await fetch("https://fyp-project-58d2d.web.app/api/setGroupArrivalTime", {
         method: "POST",
         headers: headers,
-        body: `{"groupId":"${groupId}", "lat":${lat}, "lng":${lng}}`
+        body: `{"groupId":"${groupId}", "dateTime":"${arrivalTime}"}`
     });
     return NextResponse.json({})
 }
