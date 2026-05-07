@@ -1,5 +1,4 @@
 import { OAuth2Client } from 'google-auth-library';
-import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
 const OAUTH_KEY = process.env.NEXT_PUBLIC_OAUTH_CLIENT_KEY || '';
@@ -11,7 +10,7 @@ export async function GET(req: NextRequest) {
         {
             client_id: OAUTH_CLIENT_ID,
             clientSecret: OAUTH_KEY,
-            redirectUri: "http://localhost:3000/google-login"
+            redirectUri: (new URL("/google-login", req.url)).toString()
         }
     )
     if (!OAUTH_PERMISSION_CODE) {
@@ -46,7 +45,7 @@ export async function GET(req: NextRequest) {
                 return Response.redirect(new URL("/", req.url))
             }
             default: {
-                return Response
+                return Response.redirect(new URL("/", req.url))
             }
         }
     }

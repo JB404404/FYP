@@ -4,11 +4,11 @@ export async function GET(req: NextRequest) {
     const headers = new Headers({ "account-auth": req.cookies.get("session")?.value || "" })
     const { searchParams } = new URL(req.url);
 
-    const groupId = searchParams.get("group")
-    let response = await fetch("https://fyp-project-58d2d.web.app/api/getSuggestions", {
+    const groupId = searchParams.get("groupId")
+    const response = await fetch("https://fyp-project-58d2d.web.app/api/getSuggestions", {
         method: "POST",
         headers: headers,
-        body: `{"groupId":"${groupId}"}`
+        body: JSON.stringify({groupId: groupId})
     });
     return NextResponse.json(await response.json())
 }

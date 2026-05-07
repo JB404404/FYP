@@ -16,7 +16,7 @@ export default function Home() {
   return <span className='button-board'>
     <span className='button-container'>
       <button onClick={async () => { window.location.href = "/google-login" }} className="button">Log in with google</button>
-      <button onClick={async () => { fetch("/api/createGroup") }} className="button">Create group</button>
+      <button onClick={async () => { fetch("/api/createGroup", { method: "POST", body: JSON.stringify({ name: "testGroupName" }) }) }} className="button">Create group</button>
       <button onClick={async () => { updateGroups() }} className="button">Get your groups</button>
 
     </span>
