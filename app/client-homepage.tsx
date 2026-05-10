@@ -5,6 +5,7 @@ import { useState } from "react";
 
 export default function ClientHomepage({ loggedIn }: { loggedIn: boolean }) {
     const [firstLoad, setFirstLoad] = useState(true);
+    const [newGroupName, setNewGroupName] = useState("");
     const [groups, setGroups] = useState([] as any[]);
 
 
@@ -24,7 +25,8 @@ export default function ClientHomepage({ loggedIn }: { loggedIn: boolean }) {
             </div>}
         {loggedIn &&
             <div className='button-container'>
-                <button onClick={async () => { fetch("/api/createGroup", { method: "POST", body: JSON.stringify({ name: "testGroupName" }) }).then(() => (updateGroups())) }} className='button'>Create group</button>
+                <input type="text" placeholder="Group name..." value={newGroupName} onChange={(e) => setNewGroupName(e.target.value)} className='button' />
+                <button onClick={async () => { fetch("/api/createGroup", { method: "POST", body: JSON.stringify({ name: newGroupName }) }).then(() => (updateGroups())) }} className='button'>Create group</button>
                 <button onClick={async () => { updateGroups() }} className='button'>Reload groups</button>
                 <div className='button-list'>
                     <div>Your Groups:</div>

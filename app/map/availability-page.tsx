@@ -82,8 +82,6 @@ export default function AvailabilityPage({ stateObject }: {
                     {option[0]}
                 </button>
             ))}</div>}
-
-
     </div>
 }
 

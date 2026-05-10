@@ -37,15 +37,15 @@ export default function PagesProxy({ groupId }: { groupId: string }) {
         <div className='proxy-container'>
             <div className='page-selection'>
                 <button onClick={async () => { redirect("/") }} className='button'>Back to groups</button>
-                <button onClick={() => (setSelectedPage("map"))} className='button'>Map</button>
-                <button onClick={() => (setSelectedPage("activity"))} className='button'>Activity</button>
-                <button onClick={() => (setSelectedPage("availability"))} className='button'>Availability</button>
-                <button onClick={() => (setSelectedPage("manageGroup"))} className='button'>Group information</button>
+                <button onClick={() => (setSelectedPage("map"))} disabled={selectedPage == "map"} className='button'>Map</button>
+                <button onClick={() => (setSelectedPage("activity"))} disabled={selectedPage == "activity"} className='button'>Activity</button>
+                <button onClick={() => (setSelectedPage("availability"))} disabled={selectedPage == "availability"} className='button'>Availability</button>
+                <button onClick={() => (setSelectedPage("manageGroup"))} disabled={selectedPage == "manageGroup"} className='button'>Group information</button>
             </div>
             <div className='group-information'>
                 <div className='information-container'>Activity: {(stateObject.activity.value != "") ? stateObject.activity.value : "-"}</div>
                 <div className='information-container'>Arrival time: {(!!arrivalTime && arrivalTime != "") ? (new Date(arrivalTime)).toLocaleString() : "-"}</div>
-                <div className='information-container'>Location: {(!!stateObject.destinationLatLng.value) ? `${stateObject.destinationLatLng.value[0]}, ${stateObject.destinationLatLng.value[1]}` : "-"}</div>
+                <div className='information-container'>Location: {(!!stateObject.destinationLatLng.value) ? `${stateObject.destinationLatLng.value[0].toString().substring(0, 5)}, ${stateObject.destinationLatLng.value[1].toString().substring(0, 5)}` : "-"}</div>
             </div>
 
             <div className='proxied-page'>

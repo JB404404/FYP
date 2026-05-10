@@ -53,7 +53,7 @@ body {
       height: 40px;
       border-radius: 8px;
       margin: 6px 3px 6px 3px;
-      padding: 3px 0px 3px 0px;
+      padding: 6px 6px 6px 6px;
       background-color: white;
       color: black;
     }
@@ -225,6 +225,8 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    border-color: white;
+    border-width: 0px 0px 1px 0px;
 
     .information-container {
       margin: 0px 6px;
