@@ -1,12 +1,12 @@
-import { ReactPromise, Suspense } from 'react';
-import ClientMap from './clientMap';
+import { ReactPromise } from 'react';
+import PagesProxy from './pages-proxy';
 
 
 export default async function MapPage({ searchParams }: { searchParams: ReactPromise<any> }) {
 
   return (
-    <Suspense fallback={<div>Loading map...</div>}>
-      <div><ClientMap searchParams={await searchParams} /></div>
-    </Suspense>
+    <div>
+      <PagesProxy searchParams={await searchParams}></PagesProxy>
+    </div>
   )
 }
