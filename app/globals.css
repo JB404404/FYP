@@ -32,22 +32,43 @@ body {
   flex-direction: column;
 
   .button-container {
+    margin-top: 12px;
     width: 100%;
-    height: 40%;
+    height: fit-content;
     display: flex;
     flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    .button-list {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 10px;
+      flex-grow: 1;
+    }
 
     .button {
-      background-color: black;
-      color: white;
+      width: 200px;
+      height: 40px;
+      border-radius: 8px;
+      margin: 6px 3px 6px 3px;
+      padding: 3px 0px 3px 0px;
+      background-color: white;
+      color: black;
+    }
+
+    .button:disabled {
+      opacity: 0.6;
     }
   }
 }
 
 .google-map-container {
-  width: 100%;
-  height: 100vh;
+  display: flex;
+  flex-grow: 1;
   z-index: 0;
+  justify-content: center;
 
   .map-options {
     position: relative !important;
@@ -56,22 +77,179 @@ body {
     height: fit-content;
     width: fit-content;
     flex-direction: column;
-    background-color: black;
+    background-color: white;
 
     .map-button {
+      width: 150px;
+      height: 30px;
+      border-radius: 8px;
+      padding: 3px 6px 3px 6px;
+      margin-top: 6px;
       background-color: black;
       color: white;
+      text-align: center;
     }
 
-    .map-button-toggle-on {
-      background-color: black;
+    .map-button:disabled {
+      opacity: 0.6;
+    }
+
+  }
+}
+
+.sub-page {
+  display: flex;
+  flex-direction: column;
+
+  .sub-page-button-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    .page-split {
+      margin: 6px 0px;
+      height: 3px;
+      width: 160px;
+      border-radius: 2px;
+      border-width: 2px;
       color: white;
     }
+  }
 
-    .map-button-toggle-off {
+  .button {
+    width: 200px;
+    height: 40px;
+    border-radius: 8px;
+    margin: 6px 3px 6px 3px;
+    padding: 3px 0px 3px 0px;
+    background-color: white;
+    color: black;
+  }
+
+  .button:disabled {
+    opacity: 0.6;
+  }
+
+  .value-input-button {
+    width: 200px;
+    height: 40px;
+    border-radius: 8px;
+    margin: 6px 3px 6px 3px;
+    padding: 3px 0px 3px 0px;
+    background-color: lightblue;
+    color: white;
+  }
+
+  .value-input-button:disabled {
+    opacity: 0.6;
+  }
+
+  .text-input {
+    width: 200px;
+    height: 40px;
+    border-radius: 8px;
+    margin: 6px 3px 6px 3px;
+    padding: 3px 8px 3px 8px;
+    background-color: lightgray;
+    color: black;
+  }
+
+  .list-item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 200px;
+    height: 40px;
+    border-radius: 8px;
+    margin: 6px 3px 6px 3px;
+    padding: 3px 0px 3px 0px;
+    background-color: gray;
+    color: white;
+  }
+
+  .recommendations {
+    display: flex;
+    flex-direction: column;
+
+    .recommendation-list-item {
+      display: flex;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      width: 200px;
+      height: 100px;
+      border-radius: 8px;
+      margin: 6px 3px 6px 3px;
+      padding: 3px 0px 3px 0px;
+      background-color: white;
+      color: black;
+
+      .select-button {
+        width: 80px;
+        height: 30px;
+        border-radius: 8px;
+        margin: 6px 3px 6px 3px;
+        padding: 3px 0px 3px 0px;
+        background-color: lightblue;
+        color: white;
+      }
+
+      .select-button:disabled {
+        opacity: 0.6;
+      }
+    }
+  }
+}
+
+.map-proxy-container {
+  height: 100vh;
+  padding: 6px 0px 0px;
+  display: flex;
+}
+
+.proxied-page {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.proxy-container {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+
+  .group-information {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    .information-container {
+      margin: 0px 6px;
+    }
+  }
+
+  .page-selection {
+    display: flex;
+    z-index: 100;
+    height: fit-content;
+    width: fit-content;
+    overflow-x: auto;
+
+    .button {
+      width: 150px;
+      height: 30px;
+      border-radius: 8px;
+      margin: 6px 3px 6px 3px;
+      padding: 3px 0px 3px 0px;
       background-color: white;
       color: black;
     }
 
+    .button:disabled {
+      opacity: 0.6;
+    }
   }
 }

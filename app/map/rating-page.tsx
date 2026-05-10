@@ -1,7 +1,10 @@
 'use client'
 import { useState } from "react";
+import { stateType } from "./getSet";
 
-export default function RatingPage({ searchParams }: { searchParams: any }) {
+export default function RatingPage({ stateObject }: {
+    stateObject: stateType
+}) {
 
     const [suggestions, setSuggestions] = useState<{ activity: string, latLng: number[], index: string }[]>([])
     const [firstLoad, setFirstLoad] = useState(true);
@@ -10,7 +13,7 @@ export default function RatingPage({ searchParams }: { searchParams: any }) {
 
     const ratingOptions: [string, number][] = [["Sounds great", 3], ["Okay with me", 2], ["Not preferable", 1], ["Not happening", 0]];
 
-    const groupId = searchParams?.id;
+    const groupId = stateObject.id;
 
     const getSuggestions = async () => {
         setLoading(true)
@@ -42,7 +45,7 @@ export default function RatingPage({ searchParams }: { searchParams: any }) {
     return <div className='sub-page'>
         {(!selectedSuggestion) && <div className='sub-page-button-container'>
             <button onClick={async () => { getSuggestions() }} disabled={loading} className='button'>Reload suggestions</button>
-            <div>Activities:</div>
+            <div>Rate activities:</div>
             {loading && <div>Loading...</div>}
             {suggestions.map((item, index: number) => (
                 <button className='button' key={index} onClick={() => { setSelectedSuggestion(item) }}>{item.activity}</button>

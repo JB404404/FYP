@@ -2,6 +2,7 @@
 import { GoogleMap, Marker, Polyline, useJsApiLoader } from '@react-google-maps/api';
 import { redirect } from 'next/navigation';
 import { Dispatch, SetStateAction, useState } from 'react';
+import { stateType } from './getSet';
 
 let map: any = null;
 const searchMarkers: Array<google.maps.Marker> = [];
@@ -22,11 +23,10 @@ type getSet<T> = {
 
 type getSetType = {
     email: getSet<string>,
-    lat: getSet<string | undefined>,
-    lng: getSet<string | undefined>,
+    destinationLatLng: getSet<[string, string] | undefined>
     path: getSet<google.maps.LatLngLiteral[]>,
     routes: getSet<routeInfo[]>,
-    arrivalTime: getSet<string | undefined>
+    arrivalTime: getSet<string>
     suggestArrivalTime: getSet<string | undefined>,
     clickedLatLng: getSet<{ lat: number, lng: number } | undefined>,
     activity: getSet<string>,
@@ -35,24 +35,25 @@ type getSetType = {
     findingRoute: getSet<boolean>
 }
 
-export default function ClientMap({ searchParams }: { searchParams: any }) {
+export default function ClientMap({ stateObject }: {
+    stateObject: stateType
+}) {
 
-    const stateObject = {
+    const mapStateObject = {
         firstLoad: createState<boolean>(true),
         routes: createState<routeInfo[]>([]),
         path: createState<google.maps.LatLngLiteral[]>([]),
         email: createState<string>(""),
-        lat: createState<string | undefined>(searchParams?.lat),
-        lng: createState<string | undefined>(searchParams?.lng),
-        isOwner: createState<boolean>(Boolean(searchParams?.owner)),
+        destinationLatLng: stateObject.destinationLatLng,
+        isOwner: stateObject.ownerAccount,
         clickedLatLng: createState<{ lat: number, lng: number } | undefined>(undefined),
-        arrivalTime: createState<string | undefined>(searchParams?.arrivalTime),
+        arrivalTime: createState<string>(""),
         suggestArrivalTime: createState<string | undefined>(""),
         activity: createState<string>(""),
         findingRoute: createState<boolean>(false)
     }
 
-    const groupId = searchParams?.id;
+    const groupId = stateObject.id;
 
     const { isLoaded: isMapAPILoaded } = useJsApiLoader({
         id: 'google-map-script',
@@ -64,10 +65,10 @@ export default function ClientMap({ searchParams }: { searchParams: any }) {
         return <div>Loading</div>
     } else {
         const destinationLatLng = new google.maps.LatLng({
-            lat: +(searchParams?.lat || 51.509865),
-            lng: +(searchParams?.lng || -0.118092)
+            lat: +(stateObject.destinationLatLng.value?.[0] || 51.509865),
+            lng: +(stateObject.destinationLatLng.value?.[1] || -0.118092)
         })
-        return Map(destinationLatLng, groupId, stateObject);
+        return Map(destinationLatLng, groupId, mapStateObject);
     }
 }
 
@@ -99,56 +100,49 @@ function Map(destinationLatLng: google.maps.LatLng, groupId: string, getSet: get
         {getSet.clickedLatLng.value && <Marker position={getSet.clickedLatLng.value} />}
 
         <Polyline path={getSet.path.value} options={{ strokeColor: "#4285F4", strokeWeight: 4, }} />
-
-        {getSet.isOwner.value && <div className='map-options'>
-            <input type="datetime-local" value={getSet.arrivalTime.value} onChange={(e) => getSet.arrivalTime.setValue(e.target.value)} />
-            <button onClick={async () => { setGroupArrivalTime(groupId, getSet.arrivalTime.value) }} className='button'>Set group's arrival time</button>
-            <input type="datetime-local" value={getSet.suggestArrivalTime.value} onChange={(e) => getSet.suggestArrivalTime.setValue(e.target.value)} />
-            <button onClick={async () => { suggestGroupArrivalTime(groupId, getSet.suggestArrivalTime.value) }} className='button'>Suggest group's arrival time</button>
-            <button className='button' onClick={() => { getRecommendedActivity(groupId) }}>Get recommended activity</button>
-        </div>}
-
-        {getSet.clickedLatLng.value && <div className='map-options'>
-            <input className='button'
-                type="text"
-                value={getSet.activity.value}
-                onChange={(e) => getSet.activity.setValue(e.target.value)}
-                placeholder="Enter activity..."
-            />
-            <button onClick={async () => { suggestLocationAndActivity(groupId, getSet.clickedLatLng.value, getSet.activity.value) }} className='button'>Suggest activity at location</button>
-        </div>}
-        {(getSet.clickedLatLng.value && getSet.isOwner) && <div className='map-options'><button onClick={async () => { setGroupDestination(groupId, getSet.clickedLatLng.value) }} className='button'>Set a group's destination</button></div>}
-        {/* <div className='map-options'>
-            <button onClick={async () => { choices.restaurant = !choices.restaurant }} className='map-button-toggle-on'>Restaurants</button>
-            <button onClick={async () => { choices.park = !choices.park }} className='map-button-toggle-on'>Parks</button>
-            <button onClick={async () => { choices.cafe = !choices.cafe }} className='map-button-toggle-on'>Cafe</button>
+        <div className='map-options'>
+            {getSet.clickedLatLng.value && <div className='map-options'>
+                <input className='map-button'
+                    type="text"
+                    value={getSet.activity.value}
+                    onChange={(e) => getSet.activity.setValue(e.target.value)}
+                    placeholder="Enter activity..."
+                />
+                <button onClick={async () => { suggestLocationAndActivity(groupId, getSet.clickedLatLng.value, getSet.activity.value) }} className='map-button'>Suggest activity</button>
+            </div>}
+            {(getSet.clickedLatLng.value && getSet.isOwner) && <div className='map-options'><button onClick={async () => { setGroupDestination(groupId, getSet.clickedLatLng.value, getSet.activity.value) }} className='map-button'>Set a group's destination</button></div>}
+            {/* <div className='map-options'>
+            <button onClick={async () => { choices.restaurant = !choices.restaurant }} className='map-button'>Restaurants</button>
+            <button onClick={async () => { choices.park = !choices.park }} className='map-button'>Parks</button>
+            <button onClick={async () => { choices.cafe = !choices.cafe }} className='map-button'>Cafe</button>
 
             <button onClick={async () => { searchNearby(location, choices) }} className='map-button'>Search nearby</button>
         </div> */}
-        <div className='map-options'>
-            {(!getSet.findingRoute.value) && <button onClick={async () => { getSet.findingRoute.setValue(true) }} className='map-button'>Find route</button>}
-            {getSet.findingRoute.value && <button onClick={async () => { getSet.findingRoute.setValue(false) }} className='map-button-toggle-on'>Cancel</button>}
+            <div className='map-options'>
+                {(!getSet.findingRoute.value) && <button onClick={async () => { getSet.findingRoute.setValue(true) }} className='map-button'>Find route</button>}
+                {getSet.findingRoute.value && <button onClick={async () => { getSet.findingRoute.setValue(false) }} className='map-button'>Cancel</button>}
 
-            {getSet.findingRoute.value && <div className='map-options'>
-                <button onClick={async () => { findRoute(location, "TRANSIT", getSet); getSet.findingRoute.setValue(false) }} className='map-button-toggle-on'>Public transport</button>
-                <button onClick={async () => { findRoute(location, "DRIVE", getSet); getSet.findingRoute.setValue(false) }} className='map-button-toggle-on'>Car</button>
-                <button onClick={async () => { findRoute(location, "WALK", getSet); getSet.findingRoute.setValue(false) }} className='map-button-toggle-on'>Walk</button>
-            </div>}
-        </div>
-        <div className='map-options'>
-            {getSet.routes.value.map((item: routeInfo, index: number) => (
-                <div key={index}>
-                    <button className='button' onClick={() => { getSet.path.setValue(item.pathData) }}>{`${item.duration} - ${item.travelMode}`}</button>
-                </div>
-            ))}
+                {getSet.findingRoute.value && <div className='map-options'>
+                    <button onClick={async () => { findRoute(location, "TRANSIT", getSet); getSet.findingRoute.setValue(false) }} className='map-button'>Public transport</button>
+                    <button onClick={async () => { findRoute(location, "DRIVE", getSet); getSet.findingRoute.setValue(false) }} className='map-button'>Car</button>
+                    <button onClick={async () => { findRoute(location, "WALK", getSet); getSet.findingRoute.setValue(false) }} className='map-button'>Walk</button>
+                </div>}
+            </div>
+            <div className='map-options'>
+                {getSet.routes.value.map((item: routeInfo, index: number) => (
+                    <div key={index}>
+                        <button className='map-button' onClick={() => { getSet.path.setValue(item.pathData) }}>{`${item.duration} - ${item.travelMode}`}</button>
+                    </div>
+                ))}
+            </div>
         </div>
     </GoogleMap>
 }
 
-function setGroupDestination(groupId: string, latLng: undefined | { lat: number, lng: number }) {
-    if (latLng) {
-        fetch(`/api/setGroupDestination`,
-            { method: "POST", body: JSON.stringify({ groupId: groupId, lat: latLng.lat, lng: latLng.lng }) })
+function setGroupDestination(groupId: string, latLng: undefined | { lat: number, lng: number }, activity: string) {
+    if (latLng && (activity != "")) {
+        fetch(`/api/setGroupDestination`, { method: "POST", body: JSON.stringify({ groupId: groupId, lat: latLng.lat, lng: latLng.lng }) })
+        fetch(`/api/setGroupActivity`, { method: "POST", body: JSON.stringify({ groupId: groupId, activity: activity }) })
     }
 }
 function suggestLocationAndActivity(groupId: string, latLng: undefined | { lat: number, lng: number }, activity: string) {
@@ -156,24 +150,6 @@ function suggestLocationAndActivity(groupId: string, latLng: undefined | { lat: 
         fetch(`/api/suggestLocationAndActivity`,
             { method: "POST", body: JSON.stringify({ groupId: groupId, lat: latLng.lat, lng: latLng.lng, activity: activity }) })
     }
-}
-function setGroupArrivalTime(groupId: string, time: string | undefined) {
-    if (time) {
-        fetch(`/api/setGroupArrivalTime`,
-            { method: "POST", body: JSON.stringify({ groupId: groupId, arrivalTime: time }) })
-    }
-}
-
-function suggestGroupArrivalTime(groupId: string, time: string | undefined) {
-    if (time) {
-        fetch(`/api/suggestGroupArrivalTime`,
-            { method: "POST", body: JSON.stringify({ groupId: groupId, arrivalTime: time }) })
-    }
-}
-
-async function getRecommendedActivity(groupId: string) {
-    const response = await fetch(`/api/getRecommendedActivity?groupId=${groupId}`)
-    console.log(await response.json())
 }
 
 async function searchNearby(location: { coords: google.maps.LatLng }, choices: { restaurant: boolean, park: boolean, cafe: boolean }) {
@@ -209,8 +185,8 @@ async function searchNearby(location: { coords: google.maps.LatLng }, choices: {
 async function findRoute(location: { coords: google.maps.LatLng }, transportType: string, getSet: getSetType) {
 
     const arrivalTime = getSet.arrivalTime.value + ":00Z";
-    const lat = getSet.lat.value;
-    const lng = getSet.lng.value;
+    const lat = getSet.destinationLatLng.value?.[0];
+    const lng = getSet.destinationLatLng.value?.[1];
     if (!(lat && lng)) { return; }
     const body = {
         arrivalTime: arrivalTime,

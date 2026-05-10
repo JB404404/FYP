@@ -12,6 +12,6 @@ export async function GET(req: NextRequest) {
                 credentials: "include"
             })
 
-        return NextResponse.redirect(new URL("/", HOST_ORIGIN), { headers: response.headers })
+        return NextResponse.redirect(new URL("/", HOST_ORIGIN), { headers: {"Set-Cookie" : response.headers.getSetCookie()[0]} })
     }
 }

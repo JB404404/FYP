@@ -1,16 +1,38 @@
 'use client'
-import { Suspense, useState } from 'react';
+import { Dispatch, SetStateAction, Suspense, useState } from 'react';
 import ClientMap from './client-map';
 import RatingPage from './rating-page';
 import AvailabilityPage from './availability-page';
 import ManageGroupPage from './manage-group-page';
 import { redirect } from 'next/navigation';
+import { createState, stateType } from './getSet';
 
 
 type pageChoice = "map" | "activity" | "availability" | "manageGroup";
 
-export default function PagesProxy({ searchParams }: { searchParams: any }) {
-    const [selectedPage, setSelectedPage] = useState<pageChoice>("map")
+
+export default function PagesProxy({ groupId }: { groupId: string }) {
+    const [selectedPage, setSelectedPage] = useState<pageChoice>("map");
+    const [arrivalTime, setArrivalTime] = useState<string>("");
+
+    const [firstLoad, setFirstLoad] = useState<boolean>(true);
+
+    const stateObject: stateType = {
+        id: groupId,
+        users: createState<string[]>([]),
+        arrivalTime: createState<string | undefined>(undefined),
+        destinationLatLng: createState<[string, string] | undefined>(undefined),
+        ownerAccount: createState<boolean>(false),
+        activity: createState<string>(""),
+        updateGroupState: undefined
+    }
+    stateObject.updateGroupState = () => (getGroupInformation(groupId, stateObject, setArrivalTime));
+
+    if (firstLoad) {
+        setFirstLoad(false);
+        stateObject.updateGroupState();
+    }
+
     return (
         <div className='proxy-container'>
             <div className='page-selection'>
@@ -20,30 +42,47 @@ export default function PagesProxy({ searchParams }: { searchParams: any }) {
                 <button onClick={() => (setSelectedPage("availability"))} className='button'>Availability</button>
                 <button onClick={() => (setSelectedPage("manageGroup"))} className='button'>Group information</button>
             </div>
-            <div>
-                <div>Arrival time: {searchParams?.arrivalTime ? (new Date(searchParams.arrivalTime)).toLocaleString() : "-"}</div>
+            <div className='group-information'>
+                <div className='information-container'>Activity: {(stateObject.activity.value != "") ? stateObject.activity.value : "-"}</div>
+                <div className='information-container'>Arrival time: {(!!arrivalTime && arrivalTime != "") ? (new Date(arrivalTime)).toLocaleString() : "-"}</div>
+                <div className='information-container'>Location: {(!!stateObject.destinationLatLng.value) ? `${stateObject.destinationLatLng.value[0]}, ${stateObject.destinationLatLng.value[1]}` : "-"}</div>
             </div>
 
-            <div>
+            <div className='proxied-page'>
                 {(selectedPage == "map") && <Suspense fallback={<div>Loading map...</div>}>
-                    <div><ClientMap searchParams={searchParams} /></div>
+                    <ClientMap stateObject={stateObject} />
                 </Suspense>}
                 {(selectedPage == "activity") && <Suspense fallback={<div>Loading activities...</div>}>
-                    <div>
-                        <RatingPage searchParams={searchParams} />
-                    </div></Suspense>
+
+                    <RatingPage stateObject={stateObject} />
+                </Suspense>
                 }
                 {(selectedPage == "availability") && <Suspense fallback={<div>Loading availability...</div>}>
-                    <div>
-                        <AvailabilityPage searchParams={searchParams} />
-                    </div></Suspense>
+
+                    <AvailabilityPage stateObject={stateObject} />
+                </Suspense>
                 }
                 {(selectedPage == "manageGroup") && <Suspense fallback={<div>Loading group management...</div>}>
-                    <div>
-                        <ManageGroupPage searchParams={searchParams} />
-                    </div></Suspense>
+
+                    <ManageGroupPage stateObject={stateObject} />
+                </Suspense>
                 }
             </div>
         </div>
     )
+}
+
+
+async function getGroupInformation(groupId: string, stateObject: stateType, updateArrivalTime: Dispatch<SetStateAction<string>>): Promise<void> {
+    const groupInformationResponse = await fetch(`api/getGroupInformation?groupId=${groupId}`);
+    return groupInformationResponse.json().then((groupInfo) => {
+        stateObject.users.setValue(groupInfo.users)
+        stateObject.arrivalTime.setValue(groupInfo.arrivalTime)
+        stateObject.destinationLatLng.setValue(groupInfo.destinationLatLng)
+        stateObject.ownerAccount.setValue(groupInfo.ownerAccount)
+        stateObject.activity.setValue(groupInfo.activity)
+        updateArrivalTime(groupInfo.arrivalTime)
+        return;
+    });
+
 }

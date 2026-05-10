@@ -3,10 +3,12 @@ import PagesProxy from './pages-proxy';
 
 
 export default async function MapPage({ searchParams }: { searchParams: ReactPromise<any> }) {
+  const id = (await searchParams).id;
+
 
   return (
-    <div>
-      <PagesProxy searchParams={await searchParams}></PagesProxy>
+    <div className='map-proxy-container'>
+      <PagesProxy groupId={id}></PagesProxy>
     </div>
   )
 }
