@@ -67,11 +67,8 @@ export default function AvailabilityPage({ stateObject }: {
 
             ))}</div>}
 
-        {selectedTimeFrame && <div>
-            <button className='button' onClick={() => { setSelectedTimeFrame(undefined) }}>Choose different time frame</button>
-        </div>}
-
         {selectedTimeFrame && <div className='sub-page-button-container'>
+            <button className='button' onClick={() => { setSelectedTimeFrame(undefined) }}>Choose different time frame</button>
             {availabilityOptions.map((option, index) => (
                 <button
                     key={index}

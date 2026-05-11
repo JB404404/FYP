@@ -51,10 +51,8 @@ export default function RatingPage({ stateObject }: {
                 <button className='button' key={index} onClick={() => { setSelectedSuggestion(item) }}>{item.activity}</button>
             ))}
         </div>}
-        {selectedSuggestion && <div>
-            <button className='button' onClick={() => { setSelectedSuggestion(undefined) }}>Choose different activity</button>
-        </div>}
         {selectedSuggestion && <div className='sub-page-button-container'>
+            <button className='button' onClick={() => { setSelectedSuggestion(undefined) }}>Choose different activity</button>
             {ratingOptions.map((option, index) => (
                 <button
                     key={index}
