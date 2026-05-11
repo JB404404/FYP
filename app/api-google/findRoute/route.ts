@@ -24,8 +24,8 @@ export async function POST(req: NextRequest) {
         "destination": {
             "location": {
                 "latLng": {
-                    "latitude": 51.27686,// (+lat) + (0.03),
-                    "longitude": 0.18168//lng
+                    "latitude": lat,
+                    "longitude": lng
                 }
             }
         },

@@ -78,10 +78,12 @@ body {
     width: fit-content;
     flex-direction: column;
     background-color: white;
+    justify-content: center;
 
     .map-button {
       width: 150px;
-      height: 30px;
+      min-height: 30px;
+      height: fit-content;
       border-radius: 8px;
       padding: 3px 6px 3px 6px;
       margin-top: 6px;
@@ -90,8 +92,20 @@ body {
       text-align: center;
     }
 
+    .map-info {
+      width: 150px;
+      min-height: 30px;
+      height: fit-content;
+      border-radius: 8px;
+      padding: 3px 6px 3px 6px;
+      margin-top: 6px;
+      background-color: gray;
+      color: white;
+      text-align: center;
+    }
+
     .map-button:disabled {
-      opacity: 0.6;
+      opacity: 0.8;
     }
 
   }
@@ -138,7 +152,7 @@ body {
     margin: 6px 3px 6px 3px;
     padding: 3px 0px 3px 0px;
     background-color: lightblue;
-    color: white;
+    color: black;
   }
 
   .value-input-button:disabled {
@@ -160,7 +174,8 @@ body {
     justify-content: center;
     align-items: center;
     width: 200px;
-    height: 40px;
+    min-height: 40px;
+    height: fit-content;
     border-radius: 8px;
     margin: 6px 3px 6px 3px;
     padding: 3px 0px 3px 0px;
@@ -193,7 +208,7 @@ body {
         margin: 6px 3px 6px 3px;
         padding: 3px 0px 3px 0px;
         background-color: lightblue;
-        color: white;
+        color: black;
       }
 
       .select-button:disabled {
@@ -215,43 +230,55 @@ body {
   flex-grow: 1;
 }
 
-.proxy-container {
+.map-proxy-container {
+  height: 100dvh;
+  width: 100%;
+  padding: 6px 0px 0px;
   display: flex;
-  flex-direction: column;
-  flex-grow: 1;
 
-  .group-information {
+  .proxy-container {
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    border-color: white;
-    border-width: 0px 0px 1px 0px;
+    flex-grow: 1;
+    width: 100%;
 
-    .information-container {
-      margin: 0px 6px;
+    .page-selection {
+      display: flex;
+      flex-direction: row;
+      z-index: 100;
+      width: 100%;
+      overflow-x: auto;
+
+      .scrollable-container {
+        display: flex;
+
+        .button {
+          width: 150px;
+          height: 30px;
+          border-radius: 8px;
+          margin: 6px 3px 6px 3px;
+          padding: 3px 0px 3px 0px;
+          background-color: white;
+          color: black;
+        }
+
+        .button:disabled {
+          opacity: 0.6;
+        }
+      }
     }
-  }
 
-  .page-selection {
-    display: flex;
-    z-index: 100;
-    height: fit-content;
-    width: fit-content;
-    overflow-x: auto;
+    .group-information {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      border-color: white;
+      border-width: 0px 0px 1px 0px;
 
-    .button {
-      width: 150px;
-      height: 30px;
-      border-radius: 8px;
-      margin: 6px 3px 6px 3px;
-      padding: 3px 0px 3px 0px;
-      background-color: white;
-      color: black;
-    }
-
-    .button:disabled {
-      opacity: 0.6;
+      .information-container {
+        margin: 0px 6px;
+      }
     }
   }
 }

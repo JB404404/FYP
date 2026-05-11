@@ -36,11 +36,13 @@ export default function PagesProxy({ groupId }: { groupId: string }) {
     return (
         <div className='proxy-container'>
             <div className='page-selection'>
-                <button onClick={async () => { redirect("/") }} className='button'>Back to groups</button>
-                <button onClick={() => (setSelectedPage("map"))} disabled={selectedPage == "map"} className='button'>Map</button>
-                <button onClick={() => (setSelectedPage("activity"))} disabled={selectedPage == "activity"} className='button'>Activity</button>
-                <button onClick={() => (setSelectedPage("availability"))} disabled={selectedPage == "availability"} className='button'>Availability</button>
-                <button onClick={() => (setSelectedPage("manageGroup"))} disabled={selectedPage == "manageGroup"} className='button'>Group information</button>
+                <div className='scrollable-container'>
+                    <button onClick={async () => { redirect("/") }} className='button'>Back to groups</button>
+                    <button onClick={() => (setSelectedPage("map"))} disabled={selectedPage == "map"} className='button'>Map</button>
+                    <button onClick={() => (setSelectedPage("activity"))} disabled={selectedPage == "activity"} className='button'>Activity</button>
+                    <button onClick={() => (setSelectedPage("availability"))} disabled={selectedPage == "availability"} className='button'>Availability</button>
+                    <button onClick={() => (setSelectedPage("manageGroup"))} disabled={selectedPage == "manageGroup"} className='button'>Group information</button>
+                </div>
             </div>
             <div className='group-information'>
                 <div className='information-container'>Activity: {(stateObject.activity.value != "") ? stateObject.activity.value : "-"}</div>
