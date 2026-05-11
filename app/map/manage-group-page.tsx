@@ -51,9 +51,11 @@ export default function ManageGroupPage({ stateObject }: {
 
     const setValues = async (item: { time: string, activity: string, location: [number, number] }) => {
         setLoading(true)
-        fetch(`/api/setGroupArrivalTime`, { method: "POST", body: JSON.stringify({ groupId: groupId, arrivalTime: item.time }) })
-        fetch(`/api/setGroupDestination`, { method: "POST", body: JSON.stringify({ groupId: groupId, lat: item.location[0], lng: item.location[1] }) })
-        await fetch(`/api/setGroupActivity`, { method: "POST", body: JSON.stringify({ groupId: groupId, activity: item.activity }) })
+        await Promise.all([
+            fetch(`/api/setGroupArrivalTime`, { method: "POST", body: JSON.stringify({ groupId: groupId, arrivalTime: item.time }) }),
+            fetch(`/api/setGroupDestination`, { method: "POST", body: JSON.stringify({ groupId: groupId, lat: item.location[0], lng: item.location[1] }) }),
+            fetch(`/api/setGroupActivity`, { method: "POST", body: JSON.stringify({ groupId: groupId, activity: item.activity }) })
+        ])
         if (stateObject.updateGroupState) {
             await stateObject.updateGroupState()
         }
