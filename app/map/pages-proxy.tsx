@@ -17,6 +17,7 @@ export default function PagesProxy({ groupId }: { groupId: string }) {
 
     const [firstLoad, setFirstLoad] = useState<boolean>(true);
 
+    // defines the state object for the group the user is currently viewing
     const stateObject: stateType = {
         id: groupId,
         users: createState<string[]>([]),
@@ -26,7 +27,7 @@ export default function PagesProxy({ groupId }: { groupId: string }) {
         activity: createState<string>(""),
         updateGroupState: undefined
     }
-    stateObject.updateGroupState = () => (getGroupInformation(groupId, stateObject, setArrivalTime));
+    stateObject.updateGroupState = async () => (await getGroupInformation(groupId, stateObject, setArrivalTime));
 
     if (firstLoad) {
         setFirstLoad(false);

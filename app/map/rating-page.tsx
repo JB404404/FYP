@@ -6,11 +6,13 @@ export default function RatingPage({ stateObject }: {
     stateObject: stateType
 }) {
 
-    const [suggestions, setSuggestions] = useState<{ activity: string, latLng: number[], index: string }[]>([])
+    const [suggestions, setSuggestions] = useState<{ activity: string, latLng: [number, number], index: string, averageRating: number, userRating: string }[]>([])
+    const [viewingRating, setViewingRating] = useState<boolean>(false)
     const [firstLoad, setFirstLoad] = useState(true);
-    const [selectedSuggestion, setSelectedSuggestion] = useState<{ activity: string, latLng: number[], index: string } | undefined>(undefined)
+    const [selectedSuggestion, setSelectedSuggestion] = useState<{ activity: string, latLng: number[], index: string, averageRating: number, userRating: string } | undefined>(undefined)
     const [loading, setLoading] = useState<boolean>(false)
 
+    const ratingConversion: Map<number, string> = new Map([[3, "Sounds great"], [2, "Okay with me",], [1, "Not preferable"], [0, "Not happening"]]);
     const ratingOptions: [string, number][] = [["Sounds great", 3], ["Okay with me", 2], ["Not preferable", 1], ["Not happening", 0]];
 
     const groupId = stateObject.id;
@@ -22,7 +24,7 @@ export default function RatingPage({ stateObject }: {
         const responseJson = await response.json()
         const updatedSuggestions = [];
         for (let suggestion of responseJson.suggestions) {
-            updatedSuggestions.push({ activity: suggestion.activity, index: suggestion.index, latLng: suggestion.latLng })
+            updatedSuggestions.push({ activity: suggestion.activity, index: suggestion.index, latLng: suggestion.latLng, averageRating: suggestion.averageRating || 0, userRating: ratingConversion.get(suggestion.userRating) || ratingConversion.get(0)!! })
         }
         setSuggestions(updatedSuggestions)
         setLoading(false)
@@ -44,11 +46,23 @@ export default function RatingPage({ stateObject }: {
 
     return <div className='sub-page'>
         {(!selectedSuggestion) && <div className='sub-page-button-container'>
+            {stateObject.ownerAccount.value && <div className='recommendations'>
+                {!viewingRating && <button onClick={async () => { setViewingRating(true) }} className='button'>View current ratings</button>}
+                {viewingRating && <button onClick={async () => { setViewingRating(false) }} className='button'>Hide</button>}
+                {viewingRating && suggestions.sort((a, b) => { return b.averageRating - a.averageRating }).map((item, index: number) => (
+                    <div key={index} className='recommendation-list-item'>
+                        <div className='text-container'>{item.activity}</div>
+                        <div className='text-container'>Rating: {item.averageRating.toString().substring(0, 5)} / 3</div>
+                        <button className="select-button" onClick={async () => { await setGroupDestination(groupId, item.latLng, item.activity); stateObject.updateGroupState?.(); setViewingRating(false) }}>Select</button>
+                    </div>
+                ))}
+                <hr className="page-split" />
+            </div>}
             <button onClick={async () => { getSuggestions() }} disabled={loading} className='button'>Reload suggestions</button>
             <div>Rate activities:</div>
             {loading && <div>Loading...</div>}
             {suggestions.map((item, index: number) => (
-                <button className='button' key={index} onClick={() => { setSelectedSuggestion(item) }}>{item.activity}</button>
+                <button className='button' key={index} onClick={() => { setSelectedSuggestion(item) }}><div>{item.activity}</div><div>{item.userRating}</div></button>
             ))}
         </div>}
         {selectedSuggestion && <div className='sub-page-button-container'>
@@ -56,7 +70,7 @@ export default function RatingPage({ stateObject }: {
             {ratingOptions.map((option, index) => (
                 <button
                     key={index}
-                    onClick={() => setRating(option[1])}
+                    onClick={async () => {await setRating(option[1]); getSuggestions();}}
                     className='value-input-button'
                     disabled={loading}
                 >
@@ -65,4 +79,10 @@ export default function RatingPage({ stateObject }: {
             ))}
         </div>}
     </div>
+}
+
+async function setGroupDestination(groupId: string, latLng: [number, number], activity: string) {
+    if (latLng && (activity != "")) {
+        await fetch(`/api/setGroupDestinationAndActivity`, { method: "POST", body: JSON.stringify({ groupId: groupId, lat: latLng[0], lng: latLng[1], activity: activity }) })
+    }
 }

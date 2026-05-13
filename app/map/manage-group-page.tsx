@@ -44,17 +44,18 @@ export default function ManageGroupPage({ stateObject }: {
     }
 
     const getRecommendedActivity = async (groupId: string) => {
+        setLoading(true)
         const response = await fetch(`/api/getRecommendedActivity?groupId=${groupId}`)
         const responseJson = await response.json()
         setRecommendedActivities(responseJson.topThree)
+        setLoading(false)
     }
 
     const setValues = async (item: { time: string, activity: string, location: [number, number] }) => {
         setLoading(true)
         await Promise.all([
             fetch(`/api/setGroupArrivalTime`, { method: "POST", body: JSON.stringify({ groupId: groupId, arrivalTime: item.time }) }),
-            fetch(`/api/setGroupDestination`, { method: "POST", body: JSON.stringify({ groupId: groupId, lat: item.location[0], lng: item.location[1] }) }),
-            fetch(`/api/setGroupActivity`, { method: "POST", body: JSON.stringify({ groupId: groupId, activity: item.activity }) })
+            fetch(`/api/setGroupDestinationAndActivity`, { method: "POST", body: JSON.stringify({ groupId: groupId, lat: item.location[0], lng: item.location[1], activity: item.activity  }) }),
         ])
         if (stateObject.updateGroupState) {
             await stateObject.updateGroupState()
@@ -83,7 +84,7 @@ export default function ManageGroupPage({ stateObject }: {
                     </div>
                 ))}
             </div>
-            <hr className="page-split" />
+            <hr className="page-split"/>
             <input className='text-input'
                 type="text"
                 value={email}

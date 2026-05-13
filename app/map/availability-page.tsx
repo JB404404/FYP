@@ -6,13 +6,15 @@ export default function AvailabilityPage({ stateObject }: {
     stateObject: stateType
 }) {
 
-    const [timeFrames, setTimeFrames] = useState<string[]>([])
+    const [timeFrames, setTimeFrames] = useState<{ time: string, averageRating: number, userRating: string }[]>([])
     const [settingArrivalTime, setSettingArrivalTime] = useState<boolean>(false)
     const [arrivalTime, setArrivalTime] = useState<string>("")
     const [firstLoad, setFirstLoad] = useState(true);
-    const [selectedTimeFrame, setSelectedTimeFrame] = useState<string | undefined>(undefined)
+    const [selectedTimeFrame, setSelectedTimeFrame] = useState<{ time: string, averageRating: number, userRating: string } | undefined>(undefined)
+    const [viewingRating, setViewingRating] = useState<boolean>(false)
     const [loading, setLoading] = useState<boolean>(false)
 
+    const availabilityConversion: Map<number, string> = new Map([[1, "Available"], [0.7, "Will arrive a bit late"], [0, "Can't make it"]]);
     const availabilityOptions: [string, number][] = [["Available", 1], ["Will arrive a bit late", 0.7], ["Can't make it", 0]];
 
     const groupId = stateObject?.id;
@@ -22,6 +24,10 @@ export default function AvailabilityPage({ stateObject }: {
         setTimeFrames([])
         const response = await fetch(`/api/getTimeFrames?groupId=${groupId}`)
         const responseJson = await response.json()
+        const newTimeframes = (responseJson.timeFrames) as { time: string, averageRating: number, userRating: number }[];
+        newTimeframes.forEach((item) => {
+            item.userRating = availabilityConversion.get(item.userRating) as any;
+        })
         setTimeFrames(responseJson.timeFrames)
         setLoading(false)
     }
@@ -30,7 +36,7 @@ export default function AvailabilityPage({ stateObject }: {
         if (availability != undefined) {
             setLoading(true)
             await fetch(`/api/setAvailability`,
-                { method: "POST", body: JSON.stringify({ groupId: groupId, availability: availability, dateTime: selectedTimeFrame }) })
+                { method: "POST", body: JSON.stringify({ groupId: groupId, availability: availability, dateTime: selectedTimeFrame?.time }) })
             setSelectedTimeFrame(undefined)
             setLoading(false)
         }
@@ -43,8 +49,22 @@ export default function AvailabilityPage({ stateObject }: {
     }
 
     return <div className='sub-page'>
+
+
         {(!selectedTimeFrame && !settingArrivalTime) && <div className='sub-page-button-container'>
 
+            {stateObject.ownerAccount.value && <div className='recommendations'>
+                {!viewingRating && <button onClick={async () => { setViewingRating(true) }} className='button'>View current ratings</button>}
+                {viewingRating && <button onClick={async () => { setViewingRating(false) }} className='button'>Hide</button>}
+                {viewingRating && timeFrames.sort((a, b) => { return b.averageRating - a.averageRating }).map((item, index: number) => (
+                    <div key={index} className='recommendation-list-item'>
+                        <div className='text-container'>{(new Date(item.time)).toLocaleString()}</div>
+                        <div className='text-container'>Rating: {item.averageRating.toString().substring(0, 5)} / 1</div>
+                        <button className="select-button" onClick={async () => { await setGroupArrivalTime(groupId, item.time); await stateObject.updateGroupState?.(); setViewingRating(false) }}>Select</button>
+                    </div>
+                ))}
+                <hr className="page-split" />
+            </div>}
 
             <input type="datetime-local" value={arrivalTime} onChange={(e) => setArrivalTime(e.target.value)} />
             <button onClick={async () => { setSettingArrivalTime(true) }} className='button'>Set group's arrival time</button>
@@ -55,7 +75,7 @@ export default function AvailabilityPage({ stateObject }: {
             {loading && <div>Loading...</div>}
             {timeFrames.map((item, index: number) => (
 
-                <button className='button' key={index} onClick={() => { setSelectedTimeFrame(item) }}>{(new Date(item)).toLocaleString()}</button>
+                <button className='button' key={index} onClick={() => { setSelectedTimeFrame(item) }}><div>{(new Date(item.time)).toLocaleString()}</div><div>{item.userRating}</div></button>
 
             ))}
         </div>}
@@ -63,7 +83,7 @@ export default function AvailabilityPage({ stateObject }: {
         {settingArrivalTime && <div className='sub-page-button-container'>
             {timeFrames.map((item, index: number) => (
 
-                <button className='value-input-button' key={index} onClick={() => { setGroupArrivalTime(groupId, item) }}>{(new Date(item)).toLocaleString()}</button>
+                <button className='value-input-button' key={index} onClick={async () => { await setGroupArrivalTime(groupId, item.time); setSettingArrivalTime(false) }}>{(new Date(item.time)).toLocaleString()}</button>
 
             ))}</div>}
 
@@ -82,9 +102,9 @@ export default function AvailabilityPage({ stateObject }: {
     </div>
 }
 
-function setGroupArrivalTime(groupId: string, time: string | undefined) {
+async function setGroupArrivalTime(groupId: string, time: string | undefined) {
     if (time) {
-        fetch(`/api/setGroupArrivalTime`,
+        await fetch(`/api/setGroupArrivalTime`,
             { method: "POST", body: JSON.stringify({ groupId: groupId, arrivalTime: time }) })
     }
 }

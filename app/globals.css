@@ -133,7 +133,8 @@ body {
 
   .button {
     width: 200px;
-    height: 40px;
+    min-height: 40px;
+    height: fit-content;
     border-radius: 8px;
     margin: 6px 3px 6px 3px;
     padding: 3px 0px 3px 0px;
@@ -186,6 +187,8 @@ body {
   .recommendations {
     display: flex;
     flex-direction: column;
+    justify-content: center;
+    align-items: center;
 
     .recommendation-list-item {
       display: flex;

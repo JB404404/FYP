@@ -56,6 +56,8 @@ export default function ClientMap({ stateObject }: {
 
         return () => { navigator.geolocation.clearWatch(locationSubscription) }
     })
+
+    // defines the state object for the map page
     const mapStateObject: getSetType = {
         firstLoadMap: createState<boolean>(true),
         routes: createState<routeInfo[]>([]),
@@ -161,8 +163,7 @@ function Map(location: google.maps.LatLng | undefined, getSet: getSetType, state
 
 function setGroupDestination(groupId: string, latLng: undefined | google.maps.LatLng, activity: string) {
     if (latLng && (activity != "")) {
-        fetch(`/api/setGroupDestination`, { method: "POST", body: JSON.stringify({ groupId: groupId, lat: latLng.lat(), lng: latLng.lng() }) })
-        fetch(`/api/setGroupActivity`, { method: "POST", body: JSON.stringify({ groupId: groupId, activity: activity }) })
+        fetch(`/api/setGroupDestinationAndActivity`, { method: "POST", body: JSON.stringify({ groupId: groupId, lat: latLng.lat(), lng: latLng.lng(), activity: activity }) })
     }
 }
 function suggestLocationAndActivity(groupId: string, latLng: undefined | google.maps.LatLng, activity: string) {
