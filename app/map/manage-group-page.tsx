@@ -51,11 +51,12 @@ export default function ManageGroupPage({ stateObject }: {
         setLoading(false)
     }
 
+    // updates both the group arrival time and the activity/destination for the group to match the provided values
     const setValues = async (item: { time: string, activity: string, location: [number, number] }) => {
         setLoading(true)
         await Promise.all([
             fetch(`/api/setGroupArrivalTime`, { method: "POST", body: JSON.stringify({ groupId: groupId, arrivalTime: item.time }) }),
-            fetch(`/api/setGroupDestinationAndActivity`, { method: "POST", body: JSON.stringify({ groupId: groupId, lat: item.location[0], lng: item.location[1], activity: item.activity  }) }),
+            fetch(`/api/setGroupDestinationAndActivity`, { method: "POST", body: JSON.stringify({ groupId: groupId, lat: item.location[0], lng: item.location[1], activity: item.activity }) }),
         ])
         if (stateObject.updateGroupState) {
             await stateObject.updateGroupState()
@@ -80,11 +81,11 @@ export default function ManageGroupPage({ stateObject }: {
                         <div>{index + 1}. {item.activity}</div>
                         <div>{(new Date(item.time)).toLocaleString()}</div>
 
-                        <button className="select-button" onClick={() => (setValues(item))}>Select</button>
+                        <button className="select-button" disabled={loading} onClick={() => (setValues(item))}>Select</button>
                     </div>
                 ))}
             </div>
-            <hr className="page-split"/>
+            <hr className="page-split" />
             <input className='text-input'
                 type="text"
                 value={email}

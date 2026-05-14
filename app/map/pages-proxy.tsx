@@ -1,20 +1,20 @@
 'use client'
-import { Dispatch, SetStateAction, Suspense, useState } from 'react';
-import ClientMap from './client-map';
-import RatingPage from './rating-page';
-import AvailabilityPage from './availability-page';
-import ManageGroupPage from './manage-group-page';
 import { redirect } from 'next/navigation';
+import { Suspense, useState } from 'react';
+import AvailabilityPage from './availability-page';
+import ClientMap from './client-map';
 import { createState, stateType } from './getSet';
+import ManageGroupPage from './manage-group-page';
+import RatingPage from './rating-page';
 
 
 type pageChoice = "map" | "activity" | "availability" | "manageGroup";
 
 
 export default function PagesProxy({ groupId }: { groupId: string }) {
-    const [selectedPage, setSelectedPage] = useState<pageChoice>("map");
-    const [arrivalTime, setArrivalTime] = useState<string>("");
+    // Server component to handle search parameter inputs for the client side components
 
+    const [selectedPage, setSelectedPage] = useState<pageChoice>("map");
     const [firstLoad, setFirstLoad] = useState<boolean>(true);
 
     // defines the state object for the group the user is currently viewing
@@ -27,7 +27,8 @@ export default function PagesProxy({ groupId }: { groupId: string }) {
         activity: createState<string>(""),
         updateGroupState: undefined
     }
-    stateObject.updateGroupState = async () => (await getGroupInformation(groupId, stateObject, setArrivalTime));
+    //defines a function within the object that allows the object to be updated from its own reference
+    stateObject.updateGroupState = async () => (await getGroupInformation(groupId, stateObject));
 
     if (firstLoad) {
         setFirstLoad(false);
@@ -47,7 +48,7 @@ export default function PagesProxy({ groupId }: { groupId: string }) {
             </div>
             <div className='group-information'>
                 <div className='information-container'>Activity: {(stateObject.activity.value != "") ? stateObject.activity.value : "-"}</div>
-                <div className='information-container'>Arrival time: {(!!arrivalTime && arrivalTime != "") ? (new Date(arrivalTime)).toLocaleString() : "-"}</div>
+                <div className='information-container'>Arrival time: {(!!stateObject.arrivalTime.value && stateObject.arrivalTime.value != undefined) ? (new Date(stateObject.arrivalTime.value)).toLocaleString() : "-"}</div>
                 <div className='information-container'>Location: {(!!stateObject.destinationLatLng.value) ? `${stateObject.destinationLatLng.value[0].toString().substring(0, 5)}, ${stateObject.destinationLatLng.value[1].toString().substring(0, 5)}` : "-"}</div>
             </div>
 
@@ -75,8 +76,8 @@ export default function PagesProxy({ groupId }: { groupId: string }) {
     )
 }
 
-
-async function getGroupInformation(groupId: string, stateObject: stateType, updateArrivalTime: Dispatch<SetStateAction<string>>): Promise<void> {
+// Updates the state of the group for this component and its child components
+async function getGroupInformation(groupId: string, stateObject: stateType): Promise<void> {
     const groupInformationResponse = await fetch(`api/getGroupInformation?groupId=${groupId}`);
     return groupInformationResponse.json().then((groupInfo) => {
         stateObject.users.setValue(groupInfo.users)
@@ -84,7 +85,6 @@ async function getGroupInformation(groupId: string, stateObject: stateType, upda
         stateObject.destinationLatLng.setValue(groupInfo.destinationLatLng)
         stateObject.ownerAccount.setValue(groupInfo.ownerAccount)
         stateObject.activity.setValue(groupInfo.activity)
-        updateArrivalTime(groupInfo.arrivalTime)
         return;
     });
 

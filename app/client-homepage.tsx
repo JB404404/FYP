@@ -30,7 +30,7 @@ export default function ClientHomepage({ loggedIn }: { loggedIn: boolean }) {
                 <button onClick={async () => { updateGroups() }} className='button'>Reload groups</button>
                 <div className='button-list'>
                     <div>Your Groups:</div>
-                    {groups.map((item, index) => (
+                    {groups?.map((item, index) => (
                         <div key={index}>
                             <button className='button' onClick={() => (redirect(`/map?id=${item.id}`))}>{item.name}</button>
                         </div>

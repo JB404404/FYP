@@ -1,13 +1,12 @@
 'use client'
-import { GoogleMap, Marker, Polyline, useJsApiLoader } from '@react-google-maps/api';
-import { redirect } from 'next/navigation';
-import { Dispatch, SetStateAction, useEffect, useState } from 'react';
-import { stateType } from './getSet';
+import { GoogleMap, Libraries, Marker, Polyline, useJsApiLoader } from '@react-google-maps/api';
+import { createState, getSet, stateType } from './getSet';
 
 let map: any = null;
 const searchMarkers: Array<google.maps.Marker> = [];
 
 const API_KEY = process.env.NEXT_PUBLIC_EMBEDDED_MAP_API_KEY || '';
+const googleMapsLibraries: Libraries = ['maps', 'marker', 'geometry'];
 
 type routeInfo = {
     steps: any[],
@@ -16,12 +15,7 @@ type routeInfo = {
     duration: string
 }
 
-type getSet<T> = {
-    value: T,
-    setValue: Dispatch<SetStateAction<T>>
-}
-
-type getSetType = {
+type mapStateObject = {
     email: getSet<string>,
     path: getSet<google.maps.LatLngLiteral[]>,
     routes: getSet<routeInfo[]>,
@@ -29,36 +23,16 @@ type getSetType = {
     clickedLatLng: getSet<google.maps.LatLng | undefined>,
     activity: getSet<string>,
     firstLoadMap: getSet<boolean>,
-    findingRoute: getSet<boolean>
+    findingRoute: getSet<boolean>,
+    hasLocationPermission: getSet<boolean>
 }
 
 export default function ClientMap({ stateObject }: {
     stateObject: stateType
 }) {
 
-    const [location, setLocation] = useState<google.maps.LatLng | undefined>(undefined)
-    useEffect(() => {
-        const geolocation = navigator.geolocation;
-        if (!geolocation) { return; }
-
-
-        const locationSubscription = geolocation?.watchPosition(
-            (position) => {
-                setLocation(new google.maps.LatLng({ lat: position.coords.latitude, lng: position.coords.longitude }))
-            },
-            (err) => {
-                if (err.code != 1) {
-                    console.error(err)
-                };
-                setLocation(undefined)
-            }
-        )
-
-        return () => { navigator.geolocation.clearWatch(locationSubscription) }
-    })
-
     // defines the state object for the map page
-    const mapStateObject: getSetType = {
+    const mapStateObject: mapStateObject = {
         firstLoadMap: createState<boolean>(true),
         routes: createState<routeInfo[]>([]),
         path: createState<google.maps.LatLngLiteral[]>([]),
@@ -66,67 +40,63 @@ export default function ClientMap({ stateObject }: {
         clickedLatLng: createState<google.maps.LatLng | undefined>(undefined),
         suggestArrivalTime: createState<string | undefined>(""),
         activity: createState<string>(""),
-        findingRoute: createState<boolean>(false)
+        findingRoute: createState<boolean>(false),
+        hasLocationPermission: createState<boolean>(true)
     }
 
     const { isLoaded: isMapAPILoaded } = useJsApiLoader({
         id: 'google-map-script',
         googleMapsApiKey: API_KEY || '',
-        libraries: ['maps', 'marker', 'geometry']
+        libraries: googleMapsLibraries
     })
 
     if (!isMapAPILoaded) {
         return <div>Loading</div>
     } else {
-        return Map(location, mapStateObject, stateObject);
+        return Map(mapStateObject, stateObject);
     }
 }
 
-function Map(location: google.maps.LatLng | undefined, getSet: getSetType, stateObject: stateType) {
+function Map(mapState: mapStateObject, stateObject: stateType) {
 
-    const choices = {
-        restaurant: false,
-        park: false,
-        cafe: false
-    };
 
     const onLoadFunction = (newMap: any) => {
         map = newMap;
-        if ((getSet.firstLoadMap.value)) {
+        if ((mapState.firstLoadMap.value)) {
             if (stateObject.destinationLatLng.value) {
                 map.panTo(new google.maps.LatLng(+stateObject.destinationLatLng.value[0], +stateObject.destinationLatLng.value[1]))
             } else {
                 map.panTo(new google.maps.LatLng(51.509865, -0.118092))
             }
         }
-        getSet.firstLoadMap.setValue(false);
+        mapState.firstLoadMap.setValue(false);
     };
 
     return <GoogleMap onLoad={onLoadFunction} id={"1"} zoom={10} mapContainerClassName='google-map-container'
         onClick={(e) => {
             if (e.latLng) {
-                getSet.clickedLatLng.setValue(new google.maps.LatLng(e.latLng.lat(), e.latLng.lng()))
+                mapState.clickedLatLng.setValue(new google.maps.LatLng(e.latLng.lat(), e.latLng.lng()))
             }
         }}
         onDragStart={() => {
-            getSet.clickedLatLng.setValue(undefined)
+            mapState.clickedLatLng.setValue(undefined)
         }}>
-        {(location != undefined) && <Marker position={location}></Marker>}
-        {(stateObject.destinationLatLng.value != undefined) && <Marker position={new google.maps.LatLng(+stateObject.destinationLatLng.value[0], +stateObject.destinationLatLng.value[1])}></Marker>}
-        {getSet.clickedLatLng.value && <Marker position={getSet.clickedLatLng.value} />}
 
-        <Polyline path={getSet.path.value} options={{ strokeColor: "#4285F4", strokeWeight: 4, }} />
+        {(stateObject.destinationLatLng.value != undefined) && <Marker position={new google.maps.LatLng(+stateObject.destinationLatLng.value[0], +stateObject.destinationLatLng.value[1])}></Marker>}
+        {mapState.clickedLatLng.value && <Marker position={mapState.clickedLatLng.value} />}
+
+        <Polyline path={mapState.path.value} options={{ strokeColor: "#4285F4", strokeWeight: 4, }} />
         <div className='map-options'>
-            {(getSet.clickedLatLng.value && (!getSet.findingRoute.value)) && <div className='map-options'>
+            {(mapState.clickedLatLng.value && (!mapState.findingRoute.value)) && <div className='map-options'>
                 <input className='map-button'
                     type="text"
-                    value={getSet.activity.value}
-                    onChange={(e) => getSet.activity.setValue(e.target.value)}
+                    value={mapState.activity.value}
+                    onChange={(e) => mapState.activity.setValue(e.target.value)}
                     placeholder="Enter activity..."
                 />
-                <button onClick={async () => { suggestLocationAndActivity(stateObject.id, getSet.clickedLatLng.value, getSet.activity.value) }} className='map-button'>Suggest activity</button>
+                <button onClick={async () => { suggestLocationAndActivity(stateObject.id, mapState.clickedLatLng.value, mapState.activity.value) }} className='map-button'>Suggest activity</button>
             </div>}
-            {(getSet.clickedLatLng.value && stateObject.ownerAccount.value && (!getSet.findingRoute.value)) && <div className='map-options'><button onClick={async () => { setGroupDestination(stateObject.id, getSet.clickedLatLng.value, getSet.activity.value) }} className='map-button'>Set destination</button></div>}
+            {(mapState.clickedLatLng.value && stateObject.ownerAccount.value && (!mapState.findingRoute.value)) && <div className='map-options'><button onClick={async () => { setGroupDestination(stateObject.id, mapState.clickedLatLng.value, mapState.activity.value) }} className='map-button'>Set destination</button></div>}
             {/* <div className='map-options'>
             <button onClick={async () => { choices.restaurant = !choices.restaurant }} className='map-button'>Restaurants</button>
             <button onClick={async () => { choices.park = !choices.park }} className='map-button'>Parks</button>
@@ -135,25 +105,25 @@ function Map(location: google.maps.LatLng | undefined, getSet: getSetType, state
             <button onClick={async () => { searchNearby(location, choices) }} className='map-button'>Search nearby</button>
         </div> */}
             <div className='map-options'>
-                {(!getSet.findingRoute.value) && <button disabled={!(!!stateObject.destinationLatLng.value && !!stateObject.arrivalTime.value)} onClick={async () => { getSet.findingRoute.setValue(true) }} className='map-button'>Find route</button>}
-                {getSet.findingRoute.value && <button onClick={async () => { getSet.findingRoute.setValue(false) }} className='map-button'>Cancel</button>}
+                {(!mapState.findingRoute.value) && <button disabled={!(!!stateObject.destinationLatLng.value && !!stateObject.arrivalTime.value)} onClick={async () => { mapState.findingRoute.setValue(true) }} className='map-button'>Find route</button>}
+                {mapState.findingRoute.value && <button onClick={async () => { mapState.findingRoute.setValue(false) }} className='map-button'>Cancel</button>}
 
-                {(getSet.findingRoute.value && (location != undefined)) && <div className='map-options'>
-                    <button onClick={async () => { findRoute(location, "TRANSIT", getSet, stateObject); getSet.findingRoute.setValue(false) }} className='map-button'>Public transport</button>
-                    <button onClick={async () => { findRoute(location, "DRIVE", getSet, stateObject); getSet.findingRoute.setValue(false) }} className='map-button'>Car</button>
-                    <button onClick={async () => { findRoute(location, "WALK", getSet, stateObject); getSet.findingRoute.setValue(false) }} className='map-button'>Walk</button>
+                {(mapState.findingRoute.value && (mapState.hasLocationPermission.value == true)) && <div className='map-options'>
+                    <button onClick={async () => { if (await findRoute(await getUserLocation(mapState.hasLocationPermission), "TRANSIT", mapState, stateObject)) { mapState.findingRoute.setValue(false) } }} className='map-button'>Public transport</button>
+                    <button onClick={async () => { if (await findRoute(await getUserLocation(mapState.hasLocationPermission), "DRIVE", mapState, stateObject)) { mapState.findingRoute.setValue(false) } }} className='map-button'>Car</button>
+                    <button onClick={async () => { if (await findRoute(await getUserLocation(mapState.hasLocationPermission), "WALK", mapState, stateObject)) { mapState.findingRoute.setValue(false) } }} className='map-button'>Walk</button>
                 </div>}
-                {(getSet.findingRoute.value && (location == undefined)) && <div className='map-options'>
+                {(mapState.findingRoute.value && (mapState.hasLocationPermission.value == false)) && <div className='map-options'>
                     <div className='map-info'>Select a starting location</div>
-                    <button disabled={!getSet.clickedLatLng.value} onClick={async () => { await findRoute(getSet.clickedLatLng.value, "TRANSIT", getSet, stateObject); getSet.findingRoute.setValue(false); getSet.clickedLatLng.setValue(undefined) }} className='map-button'>Public transport</button>
-                    <button disabled={!getSet.clickedLatLng.value} onClick={async () => { await findRoute(getSet.clickedLatLng.value, "DRIVE", getSet, stateObject); getSet.findingRoute.setValue(false); getSet.clickedLatLng.setValue(undefined) }} className='map-button'>Car</button>
-                    <button disabled={!getSet.clickedLatLng.value} onClick={async () => { await findRoute(getSet.clickedLatLng.value, "WALK", getSet, stateObject); getSet.findingRoute.setValue(false); getSet.clickedLatLng.setValue(undefined) }} className='map-button'>Walk</button>
+                    <button disabled={!mapState.clickedLatLng.value} onClick={async () => { await findRoute(mapState.clickedLatLng.value, "TRANSIT", mapState, stateObject); mapState.findingRoute.setValue(false); mapState.clickedLatLng.setValue(undefined) }} className='map-button'>Public transport</button>
+                    <button disabled={!mapState.clickedLatLng.value} onClick={async () => { await findRoute(mapState.clickedLatLng.value, "DRIVE", mapState, stateObject); mapState.findingRoute.setValue(false); mapState.clickedLatLng.setValue(undefined) }} className='map-button'>Car</button>
+                    <button disabled={!mapState.clickedLatLng.value} onClick={async () => { await findRoute(mapState.clickedLatLng.value, "WALK", mapState, stateObject); mapState.findingRoute.setValue(false); mapState.clickedLatLng.setValue(undefined) }} className='map-button'>Walk</button>
                 </div>}
             </div>
-            {(!getSet.findingRoute.value) && <div className='map-options'>
-                {getSet.routes.value.map((item: routeInfo, index: number) => (
+            {(!mapState.findingRoute.value) && <div className='map-options'>
+                {mapState.routes.value.map((item: routeInfo, index: number) => (
                     <div key={index}>
-                        <button className='map-button' onClick={() => { getSet.path.setValue(item.pathData) }}>{`${item.travelMode} ${item.duration}`}</button>
+                        <button className='map-button' onClick={() => { mapState.path.setValue(item.pathData) }}>{`${item.travelMode} ${item.duration}`}</button>
                     </div>
                 ))}
             </div>}
@@ -203,12 +173,44 @@ async function searchNearby(location: { coords: google.maps.LatLng }, choices: {
         )
     })
 }
-async function findRoute(location: google.maps.LatLng | undefined, transportType: string, getSet: getSetType, stateObject: stateType) {
-    if (location == undefined || stateObject.arrivalTime.value == undefined || stateObject.destinationLatLng.value == undefined) { return; }
+
+async function getUserLocation(hasLocationPermission: getSet<boolean>): Promise<google.maps.LatLng | undefined> {
+    return navigator.permissions?.query({ name: "geolocation" }).then(async (hasPermission) => {
+        const geolocation = navigator.geolocation;
+        if (!geolocation) { return; }
+        if (hasPermission.state == "prompt" || hasPermission.state == "granted") {
+            const position = await new Promise<GeolocationPosition | undefined>(
+                (res, rej) => {
+                    geolocation.getCurrentPosition(res, () => (res(undefined)));
+                }
+            );
+            if (position) {
+                return new google.maps.LatLng(position.coords.latitude, position.coords.longitude)
+            } else {
+                console.log("Error accessing user location");
+                hasLocationPermission.setValue(false)
+                return position
+            }
+
+        } else {
+            console.log("User location permission denied")
+            hasLocationPermission.setValue(false)
+            return undefined
+        }
+    })
+}
+
+async function findRoute(location: google.maps.LatLng | undefined, transportType: string, getSet: mapStateObject, stateObject: stateType) {
+    if (
+        location == undefined ||
+        stateObject.arrivalTime.value == undefined ||
+        stateObject.destinationLatLng?.value?.[0] == undefined ||
+        stateObject.destinationLatLng?.value?.[1] == undefined
+    ) { return false; }
     const arrivalTime = stateObject.arrivalTime.value + ":00Z";
     const lat = stateObject.destinationLatLng.value?.[0];
     const lng = stateObject.destinationLatLng.value?.[1];
-    if (!(lat && lng)) { return; }
+
     const body = {
         arrivalTime: arrivalTime,
         currentLat: location.lat(),
@@ -247,13 +249,5 @@ async function findRoute(location: google.maps.LatLng | undefined, transportType
         routes.push({ steps, pathData, travelMode: transportType, duration: hoursAndMinutesDuration })
     })
     getSet.routes.setValue(routes)
-}
-
-function createState<T>(initialValue: T): getSet<T> {
-    const [value, setValue] = useState<T>(initialValue)
-
-    return {
-        value,
-        setValue
-    }
+    return true
 }

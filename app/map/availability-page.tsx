@@ -60,7 +60,7 @@ export default function AvailabilityPage({ stateObject }: {
                     <div key={index} className='recommendation-list-item'>
                         <div className='text-container'>{(new Date(item.time)).toLocaleString()}</div>
                         <div className='text-container'>Rating: {item.averageRating.toString().substring(0, 5)} / 1</div>
-                        <button className="select-button" onClick={async () => { await setGroupArrivalTime(groupId, item.time); await stateObject.updateGroupState?.(); setViewingRating(false) }}>Select</button>
+                        <button className="select-button" disabled={loading} onClick={async () => { setLoading(true); await setGroupArrivalTime(groupId, item.time); await stateObject.updateGroupState?.(); setViewingRating(false); setLoading(false) }}>Select</button>
                     </div>
                 ))}
                 <hr className="page-split" />

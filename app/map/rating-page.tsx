@@ -53,7 +53,7 @@ export default function RatingPage({ stateObject }: {
                     <div key={index} className='recommendation-list-item'>
                         <div className='text-container'>{item.activity}</div>
                         <div className='text-container'>Rating: {item.averageRating.toString().substring(0, 5)} / 3</div>
-                        <button className="select-button" onClick={async () => { await setGroupDestination(groupId, item.latLng, item.activity); stateObject.updateGroupState?.(); setViewingRating(false) }}>Select</button>
+                        <button className="select-button" disabled={loading} onClick={async () => { setLoading(true); await setGroupDestination(groupId, item.latLng, item.activity); stateObject.updateGroupState?.(); setViewingRating(false); setLoading(false) }}>Select</button>
                     </div>
                 ))}
                 <hr className="page-split" />
@@ -70,7 +70,7 @@ export default function RatingPage({ stateObject }: {
             {ratingOptions.map((option, index) => (
                 <button
                     key={index}
-                    onClick={async () => {await setRating(option[1]); getSuggestions();}}
+                    onClick={async () => { await setRating(option[1]); getSuggestions(); }}
                     className='value-input-button'
                     disabled={loading}
                 >
