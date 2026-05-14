@@ -10,6 +10,6 @@ export async function POST(req: NextRequest) {
         headers: headers,
         body: JSON.stringify(await req.json())
     });
-    console.log(response,await response.text(), response.status)
-    return NextResponse.json({ status: response.status })
+    console.log(response, await response.text(), response.status)
+    return NextResponse.json({}, { status: response.status })
 }

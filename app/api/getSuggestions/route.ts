@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
     const response = await fetch(`${NEXT_PUBLIC_API_ROUTE}/getSuggestions`, {
         method: "POST",
         headers: headers,
-        body: JSON.stringify({groupId: groupId})
+        body: JSON.stringify({ groupId: groupId })
     });
-    return NextResponse.json(await response.json())
+    return NextResponse.json(await response.json(), { status: response.status })
 }

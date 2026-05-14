@@ -12,5 +12,5 @@ export async function GET(req: NextRequest) {
         headers: headers,
         body: JSON.stringify({ groupId: groupId })
     });
-    return NextResponse.json(await response.json())
+    return NextResponse.json(await response.json(), { status: response.status })
 }

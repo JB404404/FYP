@@ -34,5 +34,5 @@ export async function POST(req: NextRequest) {
         }
     })
 
-    return NextResponse.json({ places: (await response.json()).places })
+    return NextResponse.json({ places: (await response.json()).places }, { status: response.status })
 }

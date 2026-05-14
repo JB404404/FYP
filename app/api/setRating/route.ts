@@ -10,5 +10,5 @@ export async function POST(req: NextRequest) {
         headers: headers,
         body: JSON.stringify(await req.json())
     });
-    return NextResponse.json(await response.json())
+    return NextResponse.json(await response.json(), { status: response.status })
 }

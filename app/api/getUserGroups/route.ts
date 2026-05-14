@@ -6,5 +6,5 @@ export async function GET(req: NextRequest) {
     const headers = new Headers({ "account-auth": req.cookies.get("session")?.value || "" })
     const response = await fetch(`${NEXT_PUBLIC_API_ROUTE}/getUserGroups`, { method: "POST", headers: headers });
     const data = await response.json();
-    return NextResponse.json(data)
+    return NextResponse.json(data, { status: response.status })
 }

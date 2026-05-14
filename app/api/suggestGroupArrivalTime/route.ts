@@ -15,5 +15,5 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify({ groupId: groupId, dateTime: arrivalTime })
     });
 
-    return NextResponse.json({ status: response.status })
+    return NextResponse.json({}, { status: response.status })
 }
