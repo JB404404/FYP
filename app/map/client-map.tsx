@@ -3,7 +3,7 @@ import { GoogleMap, Libraries, Marker, Polyline, useJsApiLoader } from '@react-g
 import { createState, getSet, stateType } from './getSet';
 
 let map: any = null;
-const searchMarkers: Array<google.maps.Marker> = [];
+const searchMarkers: { marker: google.maps.marker.AdvancedMarkerElement, listener: google.maps.MapsEventListener }[] = [];
 
 const API_KEY = process.env.NEXT_PUBLIC_EMBEDDED_MAP_API_KEY || '';
 const googleMapsLibraries: Libraries = ['maps', 'marker', 'geometry'];
@@ -24,7 +24,9 @@ type mapStateObject = {
     activity: getSet<string>,
     firstLoadMap: getSet<boolean>,
     findingRoute: getSet<boolean>,
-    hasLocationPermission: getSet<boolean>
+    hasLocationPermission: getSet<boolean>,
+    searchPlaceInput: getSet<string>,
+    selectedGooglePlace: getSet<{ name: string, location: google.maps.LatLng } | undefined>
 }
 
 export default function ClientMap({ stateObject }: {
@@ -41,7 +43,9 @@ export default function ClientMap({ stateObject }: {
         suggestArrivalTime: createState<string | undefined>(""),
         activity: createState<string>(""),
         findingRoute: createState<boolean>(false),
-        hasLocationPermission: createState<boolean>(true)
+        hasLocationPermission: createState<boolean>(true),
+        searchPlaceInput: createState<string>(""),
+        selectedGooglePlace: createState<{ name: string, location: google.maps.LatLng } | undefined>(undefined)
     }
 
     const { isLoaded: isMapAPILoaded } = useJsApiLoader({
@@ -72,14 +76,16 @@ function Map(mapState: mapStateObject, stateObject: stateType) {
         mapState.firstLoadMap.setValue(false);
     };
 
-    return <GoogleMap onLoad={onLoadFunction} id={"1"} zoom={10} mapContainerClassName='google-map-container'
+    return <GoogleMap onLoad={onLoadFunction} options={{ mapId: "FYP-map-id" }} zoom={10} mapContainerClassName='google-map-container'
         onClick={(e) => {
             if (e.latLng) {
                 mapState.clickedLatLng.setValue(new google.maps.LatLng(e.latLng.lat(), e.latLng.lng()))
+                mapState.selectedGooglePlace.setValue(undefined)
             }
         }}
         onDragStart={() => {
             mapState.clickedLatLng.setValue(undefined)
+            mapState.selectedGooglePlace.setValue(undefined)
         }}>
 
         {(stateObject.destinationLatLng.value != undefined) && <Marker position={new google.maps.LatLng(+stateObject.destinationLatLng.value[0], +stateObject.destinationLatLng.value[1])}></Marker>}
@@ -87,23 +93,26 @@ function Map(mapState: mapStateObject, stateObject: stateType) {
 
         <Polyline path={mapState.path.value} options={{ strokeColor: "#4285F4", strokeWeight: 4, }} />
         <div className='map-options'>
-            {(mapState.clickedLatLng.value && (!mapState.findingRoute.value)) && <div className='map-options'>
+            {((mapState.clickedLatLng.value || mapState.selectedGooglePlace.value) && (!mapState.findingRoute.value)) && <div className='map-options'>
                 <input className='map-button'
                     type="text"
                     value={mapState.activity.value}
                     onChange={(e) => mapState.activity.setValue(e.target.value)}
                     placeholder="Enter activity..."
                 />
-                <button onClick={async () => { suggestLocationAndActivity(stateObject.id, mapState.clickedLatLng.value, mapState.activity.value) }} className='map-button'>Suggest activity</button>
+                <button onClick={async () => { suggestLocationAndActivity(stateObject.id, mapState.selectedGooglePlace.value?.location || mapState.clickedLatLng.value, mapState.activity.value, mapState.selectedGooglePlace.value?.name); mapState.activity.setValue("") }} className='map-button'>Suggest activity</button>
+            </div>}
+            {(mapState.clickedLatLng.value && (!mapState.findingRoute.value)) && <div className='map-options'>
+                <input className='map-button'
+                    type="text"
+                    value={mapState.searchPlaceInput.value}
+                    onChange={(e) => mapState.searchPlaceInput.setValue(e.target.value)}
+                    placeholder="Enter search..."
+                />
+                <button disabled={mapState.searchPlaceInput.value == ""} onClick={async () => { searchNearby(mapState.searchPlaceInput.value, mapState.clickedLatLng.value, mapState); mapState.searchPlaceInput.setValue(""); mapState.activity.setValue("") }} className='map-button'>Search for nearby places</button>
             </div>}
             {(mapState.clickedLatLng.value && stateObject.ownerAccount.value && (!mapState.findingRoute.value)) && <div className='map-options'><button onClick={async () => { setGroupDestination(stateObject.id, mapState.clickedLatLng.value, mapState.activity.value) }} className='map-button'>Set destination</button></div>}
-            {/* <div className='map-options'>
-            <button onClick={async () => { choices.restaurant = !choices.restaurant }} className='map-button'>Restaurants</button>
-            <button onClick={async () => { choices.park = !choices.park }} className='map-button'>Parks</button>
-            <button onClick={async () => { choices.cafe = !choices.cafe }} className='map-button'>Cafe</button>
 
-            <button onClick={async () => { searchNearby(location, choices) }} className='map-button'>Search nearby</button>
-        </div> */}
             <div className='map-options'>
                 {(!mapState.findingRoute.value) && <button disabled={!(!!stateObject.destinationLatLng.value && !!stateObject.arrivalTime.value)} onClick={async () => { mapState.findingRoute.setValue(true) }} className='map-button'>Find route</button>}
                 {mapState.findingRoute.value && <button onClick={async () => { mapState.findingRoute.setValue(false) }} className='map-button'>Cancel</button>}
@@ -136,23 +145,28 @@ function setGroupDestination(groupId: string, latLng: undefined | google.maps.La
         fetch(`/api/setGroupDestinationAndActivity`, { method: "POST", body: JSON.stringify({ groupId: groupId, lat: latLng.lat(), lng: latLng.lng(), activity: activity }) })
     }
 }
-function suggestLocationAndActivity(groupId: string, latLng: undefined | google.maps.LatLng, activity: string) {
+function suggestLocationAndActivity(groupId: string, latLng: undefined | google.maps.LatLng, activity: string, placeName: string | undefined = undefined) {
     if (latLng && (activity != "")) {
         fetch(`/api/suggestLocationAndActivity`,
-            { method: "POST", body: JSON.stringify({ groupId: groupId, lat: latLng.lat(), lng: latLng.lng(), activity: activity }) })
+            { method: "POST", body: JSON.stringify({ groupId: groupId, lat: latLng.lat(), lng: latLng.lng(), activity: activity, placeName: placeName }) })
     }
 }
 
-async function searchNearby(location: { coords: google.maps.LatLng }, choices: { restaurant: boolean, park: boolean, cafe: boolean }) {
-    if (!Object.values(choices).find((item) => { return item == true })) {
-        console.log("no choices selected")
+async function searchNearby(searchInput: string, location: google.maps.LatLng | undefined, mapState: mapStateObject) {
+    if (searchInput == "" || location == undefined) {
+        console.log("Nearby search missing an input")
         return;
     };
+    searchMarkers.forEach((markerObj) => {
+        markerObj.marker?.remove()
+        markerObj.listener?.remove()
+    })
+    searchMarkers.length = 0
 
     const body = {
-        choices: choices,
-        lat: location.coords.lat(),
-        lng: location.coords.lng(),
+        searchInput: searchInput,
+        lat: location.lat(),
+        lng: location.lng(),
     }
 
     const response = await fetch(`/api-google/searchNearby`,
@@ -164,13 +178,23 @@ async function searchNearby(location: { coords: google.maps.LatLng }, choices: {
     const responseJson = await response.json()
     const places: Array<{ displayName: { text: string }, location: { latitude: number, longitude: number } }> = responseJson.places || [];
     places.forEach((place) => {
-        searchMarkers.push(
-            new google.maps.Marker({
-                position: new google.maps.LatLng({ lat: place.location.latitude, lng: place.location.longitude }),
-                map: map,
-                title: place.displayName.text
+        const newMarker = new google.maps.marker.AdvancedMarkerElement({
+            map: map,
+            position: {
+                lat: place.location.latitude,
+                lng: place.location.longitude
+            },
+            title: place.displayName.text
+        })
+
+        const newListener = newMarker.addListener("gmp-click", () => {
+            mapState.selectedGooglePlace.setValue({
+                name: place.displayName.text,
+                location: new google.maps.LatLng(place.location.latitude, place.location.longitude)
             })
-        )
+            mapState.clickedLatLng.setValue(undefined)
+        })
+        searchMarkers.push({ marker: newMarker, listener: newListener })
     })
 }
 
@@ -228,7 +252,7 @@ async function findRoute(location: google.maps.LatLng | undefined, transportType
     const routes: routeInfo[] = []
     responseJson?.routes?.forEach((route: any) => {
         const steps: any[] = []
-        let pathData: any[] = [];
+        let pathData: google.maps.LatLng[] = [];
         try {
             pathData = google.maps.geometry.encoding.decodePath(route.polyline.encodedPolyline)
 

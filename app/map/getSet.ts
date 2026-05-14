@@ -6,6 +6,7 @@ export type stateType = {
     users: getSet<string[]>,
     arrivalTime: getSet<string | undefined>,
     destinationLatLng: getSet<[string, string] | undefined>,
+    placeName: getSet<string | undefined>,
     ownerAccount: getSet<boolean>,
     activity: getSet<string>,
     updateGroupState: (undefined | (() => Promise<void>))

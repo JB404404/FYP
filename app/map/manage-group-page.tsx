@@ -9,7 +9,7 @@ export default function ManageGroupPage({ stateObject }: {
     const [firstLoad, setFirstLoad] = useState(true);
     const [loading, setLoading] = useState<boolean>(false)
     const [userEmails, setUserEmails] = useState<string[]>(stateObject.users.value)
-    const [recommendedActivities, setRecommendedActivities] = useState<{ time: string, activity: string, location: [number, number] }[]>([]);
+    const [recommendedActivities, setRecommendedActivities] = useState<{ time: string, activity: string, location: [number, number], placeName: string | undefined }[]>([]);
 
     const groupId = stateObject?.id;
 
@@ -52,11 +52,11 @@ export default function ManageGroupPage({ stateObject }: {
     }
 
     // updates both the group arrival time and the activity/destination for the group to match the provided values
-    const setValues = async (item: { time: string, activity: string, location: [number, number] }) => {
+    const setValues = async (item: { time: string, activity: string, location: [number, number], placeName: string | undefined }) => {
         setLoading(true)
         await Promise.all([
             fetch(`/api/setGroupArrivalTime`, { method: "POST", body: JSON.stringify({ groupId: groupId, arrivalTime: item.time }) }),
-            fetch(`/api/setGroupDestinationAndActivity`, { method: "POST", body: JSON.stringify({ groupId: groupId, lat: item.location[0], lng: item.location[1], activity: item.activity }) }),
+            fetch(`/api/setGroupDestinationAndActivity`, { method: "POST", body: JSON.stringify({ groupId: groupId, lat: item.location[0], lng: item.location[1], activity: item.activity, placeName: item.placeName }) }),
         ])
         if (stateObject.updateGroupState) {
             await stateObject.updateGroupState()

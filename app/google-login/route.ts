@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
     // Creates a URL to redirect the client to the login page
     const authUrl = googleAuth.generateAuthUrl({
         access_type: "online",
-        scope: ["https://www.googleapis.com/auth/calendar.readonly", "email", "openid"],
+        scope: ["email", "openid"],
         include_granted_scopes: true
     })
     return NextResponse.redirect(authUrl)

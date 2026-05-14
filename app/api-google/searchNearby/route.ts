@@ -8,23 +8,23 @@ export async function POST(req: NextRequest) {
 
     const lat = reqBody.lat
     const lng = reqBody.lng
-    const choices = reqBody.choices
+    const searchInput = reqBody.searchInput
 
     const body = {
-        'includedTypes': [...choices.restaurant ? ['restaurant'] : [], ...choices.park ? ['park'] : [], ...choices.cafe ? ['cafe'] : []],
-        'maxResultCount': 10,
-        'locationRestriction': {
-            'circle': {
-                'center': {
-                    'latitude': lat,
-                    'longitude': lng
+        textQuery: searchInput,
+        pageSize: 10,
+        locationBias: {
+            circle: {
+                center: {
+                    latitude: lat,
+                    longitude: lng
                 },
-                'radius': 500.0
+                radius: 500.0
             }
         }
     }
 
-    const response = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
+    const response = await fetch('https://places.googleapis.com/v1/places:searchText', {
         method: 'POST',
         body: JSON.stringify(body),
         headers: {

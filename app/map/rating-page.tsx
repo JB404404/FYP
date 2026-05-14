@@ -6,7 +6,7 @@ export default function RatingPage({ stateObject }: {
     stateObject: stateType
 }) {
 
-    const [suggestions, setSuggestions] = useState<{ activity: string, latLng: [number, number], index: string, averageRating: number, userRating: string }[]>([])
+    const [suggestions, setSuggestions] = useState<{ activity: string, latLng: [number, number], index: string, averageRating: number, userRating: string, placeName: string | undefined }[]>([])
     const [viewingRating, setViewingRating] = useState<boolean>(false)
     const [firstLoad, setFirstLoad] = useState(true);
     const [selectedSuggestion, setSelectedSuggestion] = useState<{ activity: string, latLng: number[], index: string, averageRating: number, userRating: string } | undefined>(undefined)
@@ -24,7 +24,7 @@ export default function RatingPage({ stateObject }: {
         const responseJson = await response.json()
         const updatedSuggestions = [];
         for (let suggestion of responseJson.suggestions) {
-            updatedSuggestions.push({ activity: suggestion.activity, index: suggestion.index, latLng: suggestion.latLng, averageRating: suggestion.averageRating || 0, userRating: ratingConversion.get(suggestion.userRating) || ratingConversion.get(0)!! })
+            updatedSuggestions.push({ activity: suggestion.activity, index: suggestion.index, latLng: suggestion.latLng, placeName: suggestion.placeName, averageRating: suggestion.averageRating || 0, userRating: ratingConversion.get(suggestion.userRating) || ratingConversion.get(0)!! })
         }
         setSuggestions(updatedSuggestions)
         setLoading(false)
@@ -62,7 +62,7 @@ export default function RatingPage({ stateObject }: {
             <div>Rate activities:</div>
             {loading && <div>Loading...</div>}
             {suggestions.map((item, index: number) => (
-                <button className='button' key={index} onClick={() => { setSelectedSuggestion(item) }}><div>{item.activity}</div><div>{item.userRating}</div></button>
+                <button className='button' key={index} onClick={() => { setSelectedSuggestion(item) }}><div>{item.activity}</div>{item.placeName && <div>at {item.placeName}</div>}<div>{item.userRating}</div></button>
             ))}
         </div>}
         {selectedSuggestion && <div className='sub-page-button-container'>

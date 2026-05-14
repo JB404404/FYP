@@ -23,6 +23,7 @@ export default function PagesProxy({ groupId }: { groupId: string }) {
         users: createState<string[]>([]),
         arrivalTime: createState<string | undefined>(undefined),
         destinationLatLng: createState<[string, string] | undefined>(undefined),
+        placeName: createState<string | undefined>(undefined),
         ownerAccount: createState<boolean>(false),
         activity: createState<string>(""),
         updateGroupState: undefined
@@ -47,7 +48,7 @@ export default function PagesProxy({ groupId }: { groupId: string }) {
                 </div>
             </div>
             <div className='group-information'>
-                <div className='information-container'>Activity: {(stateObject.activity.value != "") ? stateObject.activity.value : "-"}</div>
+                <div className='information-container'>Activity: {(stateObject.activity.value != "") ? stateObject.activity.value : "-"}{!!stateObject.placeName.value ? ` at ${stateObject.placeName.value}` : ""}</div>
                 <div className='information-container'>Arrival time: {(!!stateObject.arrivalTime.value && stateObject.arrivalTime.value != undefined) ? (new Date(stateObject.arrivalTime.value)).toLocaleString() : "-"}</div>
                 <div className='information-container'>Location: {(!!stateObject.destinationLatLng.value) ? `${stateObject.destinationLatLng.value[0].toString().substring(0, 5)}, ${stateObject.destinationLatLng.value[1].toString().substring(0, 5)}` : "-"}</div>
             </div>
@@ -83,6 +84,7 @@ async function getGroupInformation(groupId: string, stateObject: stateType): Pro
         stateObject.users.setValue(groupInfo.users)
         stateObject.arrivalTime.setValue(groupInfo.arrivalTime)
         stateObject.destinationLatLng.setValue(groupInfo.destinationLatLng)
+        stateObject.placeName.setValue(groupInfo.placeName)
         stateObject.ownerAccount.setValue(groupInfo.ownerAccount)
         stateObject.activity.setValue(groupInfo.activity)
         return;
