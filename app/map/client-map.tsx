@@ -77,7 +77,7 @@ function Map(mapState: mapStateObject, stateObject: stateType) {
         mapState.firstLoadMap.setValue(false);
     };
 
-    return <GoogleMap onLoad={onLoadFunction} options={{ mapId: "FYP-map-id" }} zoom={10} mapContainerClassName='google-map-container'
+    return <GoogleMap onLoad={onLoadFunction} options={{ mapId: "FYP-map-id", disableDefaultUI: true }} zoom={10} mapContainerClassName='google-map-container'
         onClick={(e) => {
             if (e.latLng) {
                 mapState.clickedLatLng.setValue(new google.maps.LatLng(e.latLng.lat(), e.latLng.lng()))

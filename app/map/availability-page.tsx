@@ -93,7 +93,7 @@ export default function AvailabilityPage({ stateObject }: {
 
             ))}
         </div>}
-        {settingArrivalTime && <button onClick={async () => { setSettingArrivalTime(false) }} className='button'>Cancel</button>}
+        {settingArrivalTime && <div className='sub-page-button-container'><button onClick={async () => { setSettingArrivalTime(false) }} className='button'>Cancel</button></div>}
         {settingArrivalTime && <div className='sub-page-button-container'>
             {timeFrames.map((item, index: number) => (
 
