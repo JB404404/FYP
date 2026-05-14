@@ -1,6 +1,7 @@
 'use client'
 import { GoogleMap, Libraries, Marker, Polyline, useJsApiLoader } from '@react-google-maps/api';
 import { createState, getSet, stateType } from './getSet';
+import { toast } from 'sonner';
 
 let map: any = null;
 const searchMarkers: { marker: google.maps.marker.AdvancedMarkerElement, listener: google.maps.MapsEventListener }[] = [];
@@ -140,15 +141,27 @@ function Map(mapState: mapStateObject, stateObject: stateType) {
     </GoogleMap>
 }
 
-function setGroupDestination(groupId: string, latLng: undefined | google.maps.LatLng, activity: string) {
+async function setGroupDestination(groupId: string, latLng: undefined | google.maps.LatLng, activity: string) {
     if (latLng && (activity != "")) {
-        fetch(`/api/setGroupDestinationAndActivity`, { method: "POST", body: JSON.stringify({ groupId: groupId, lat: latLng.lat(), lng: latLng.lng(), activity: activity }) })
+        try {
+            const response = await fetch(`/api/setGroupDestinationAndActivity`, { method: "POST", body: JSON.stringify({ groupId: groupId, lat: latLng.lat(), lng: latLng.lng(), activity: activity }) })
+            if (!response.ok) { throw new Error() }
+            toast.success("Activity and destination set successfully")
+        } catch {
+            toast.error("An error occured while setting activity and destination")
+        }
     }
 }
-function suggestLocationAndActivity(groupId: string, latLng: undefined | google.maps.LatLng, activity: string, placeName: string | undefined = undefined) {
+async function suggestLocationAndActivity(groupId: string, latLng: undefined | google.maps.LatLng, activity: string, placeName: string | undefined = undefined) {
     if (latLng && (activity != "")) {
-        fetch(`/api/suggestLocationAndActivity`,
-            { method: "POST", body: JSON.stringify({ groupId: groupId, lat: latLng.lat(), lng: latLng.lng(), activity: activity, placeName: placeName }) })
+        try {
+            const response = await fetch(`/api/suggestLocationAndActivity`, { method: "POST", body: JSON.stringify({ groupId: groupId, lat: latLng.lat(), lng: latLng.lng(), activity: activity, placeName: placeName }) })
+            if (!response.ok) { throw new Error() }
+            toast.success("Activity and destination suggested successfully")
+        } catch {
+            toast.error("An error occured while suggesting destination and activity")
+        }
+
     }
 }
 
@@ -168,34 +181,38 @@ async function searchNearby(searchInput: string, location: google.maps.LatLng | 
         lat: location.lat(),
         lng: location.lng(),
     }
-
-    const response = await fetch(`/api-google/searchNearby`,
-        {
-            method: "POST",
-            body: JSON.stringify(body)
-        })
-
-    const responseJson = await response.json()
-    const places: Array<{ displayName: { text: string }, location: { latitude: number, longitude: number } }> = responseJson.places || [];
-    places.forEach((place) => {
-        const newMarker = new google.maps.marker.AdvancedMarkerElement({
-            map: map,
-            position: {
-                lat: place.location.latitude,
-                lng: place.location.longitude
-            },
-            title: place.displayName.text
-        })
-
-        const newListener = newMarker.addListener("gmp-click", () => {
-            mapState.selectedGooglePlace.setValue({
-                name: place.displayName.text,
-                location: new google.maps.LatLng(place.location.latitude, place.location.longitude)
+    try {
+        const response = await fetch(`/api-google/searchNearby`,
+            {
+                method: "POST",
+                body: JSON.stringify(body)
             })
-            mapState.clickedLatLng.setValue(undefined)
+        if (!response.ok) { throw new Error() }
+        const responseJson = await response.json()
+        const places: Array<{ displayName: { text: string }, location: { latitude: number, longitude: number } }> = responseJson.places || [];
+        places.forEach((place) => {
+            const newMarker = new google.maps.marker.AdvancedMarkerElement({
+                map: map,
+                position: {
+                    lat: place.location.latitude,
+                    lng: place.location.longitude
+                },
+                title: place.displayName.text
+            })
+
+            const newListener = newMarker.addListener("gmp-click", () => {
+                mapState.selectedGooglePlace.setValue({
+                    name: place.displayName.text,
+                    location: new google.maps.LatLng(place.location.latitude, place.location.longitude)
+                })
+                mapState.clickedLatLng.setValue(undefined)
+            })
+            searchMarkers.push({ marker: newMarker, listener: newListener })
         })
-        searchMarkers.push({ marker: newMarker, listener: newListener })
-    })
+        toast.success("Nearby place search successful")
+    } catch {
+        toast.error("An error occured whilst searching for places")
+    }
 }
 
 async function getUserLocation(hasLocationPermission: getSet<boolean>): Promise<google.maps.LatLng | undefined> {
@@ -243,35 +260,48 @@ async function findRoute(location: google.maps.LatLng | undefined, transportType
         lng: lng,
         transportType: transportType
     }
-    const routesResponse = await fetch(`/api-google/findRoute`,
-        {
-            method: "POST",
-            body: JSON.stringify(body)
-        })
-    const responseJson = await routesResponse.json()
-    const routes: routeInfo[] = []
-    responseJson?.routes?.forEach((route: any) => {
-        const steps: any[] = []
-        let pathData: google.maps.LatLng[] = [];
-        try {
-            pathData = google.maps.geometry.encoding.decodePath(route.polyline.encodedPolyline)
-
-        } catch (e) {
-            console.log("Couldn't convert line", e)
-        }
-        route.legs.forEach((leg: any) => {
-            leg.steps.forEach((step: any) => {
-                steps.push({
-                    mode: step.travelMode,
-                    action: step?.navigationInstruction?.maneuver || "",
-                    instructions: step?.navigationInstruction?.instructions || ""
-                })
+    try {
+        const routesResponse = await fetch(`/api-google/findRoute`,
+            {
+                method: "POST",
+                body: JSON.stringify(body)
             })
-        })
-        const hoursAndMinutesDuration = new Date((+(route.duration.substring(0, route.duration.length - 1))) * 1000).toISOString().slice(11, 19);
 
-        routes.push({ steps, pathData, travelMode: transportType, duration: hoursAndMinutesDuration })
-    })
-    getSet.routes.setValue(routes)
-    return true
+        if (!routesResponse.ok) { throw new Error() }
+
+        const responseJson = await routesResponse.json()
+        const routes: routeInfo[] = []
+        if (!!responseJson.routes) {
+            responseJson?.routes?.forEach((route: any) => {
+                const steps: any[] = []
+                let pathData: google.maps.LatLng[] = [];
+                try {
+                    pathData = google.maps.geometry.encoding.decodePath(route.polyline.encodedPolyline)
+
+                } catch (e) {
+                    console.log("Couldn't convert line", e)
+                }
+                route.legs.forEach((leg: any) => {
+                    leg.steps.forEach((step: any) => {
+                        steps.push({
+                            mode: step.travelMode,
+                            action: step?.navigationInstruction?.maneuver || "",
+                            instructions: step?.navigationInstruction?.instructions || ""
+                        })
+                    })
+                })
+                const hoursAndMinutesDuration = new Date((+(route.duration.substring(0, route.duration.length - 1))) * 1000).toISOString().slice(11, 19);
+
+                routes.push({ steps, pathData, travelMode: transportType, duration: hoursAndMinutesDuration })
+            })
+            getSet.routes.setValue(routes)
+            toast.success("Routes found successfully")
+            return true
+        } else {
+            toast.error("Couldn't find a route between the two provided locations")
+        }
+    } catch {
+        toast.error("An error occured whilst finding routes")
+        return false
+    }
 }

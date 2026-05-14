@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import ClientHomepage from "./client-homepage";
+import { Toaster } from "sonner";
 
 export default async function Home() {
 
@@ -10,5 +11,6 @@ export default async function Home() {
 
   return <div>
     <ClientHomepage loggedIn={loggedIn}></ClientHomepage>
+    <Toaster />
   </div>
 }

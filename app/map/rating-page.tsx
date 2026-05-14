@@ -1,6 +1,7 @@
 'use client'
 import { useState } from "react";
 import { stateType } from "./getSet";
+import { toast } from "sonner";
 
 export default function RatingPage({ stateObject }: {
     stateObject: stateType
@@ -19,15 +20,21 @@ export default function RatingPage({ stateObject }: {
 
     const getSuggestions = async () => {
         setLoading(true)
-        setSuggestions([])
-        const response = await fetch(`/api/getSuggestions?groupId=${groupId}`)
-        const responseJson = await response.json()
-        const updatedSuggestions = [];
-        for (let suggestion of responseJson.suggestions) {
-            updatedSuggestions.push({ activity: suggestion.activity, index: suggestion.index, latLng: suggestion.latLng, placeName: suggestion.placeName, averageRating: suggestion.averageRating || 0, userRating: ratingConversion.get(suggestion.userRating) || ratingConversion.get(0)!! })
+        try {
+            const response = await fetch(`/api/getSuggestions?groupId=${groupId}`)
+            if (!response.ok) { throw new Error() }
+            const responseJson = await response.json()
+            const updatedSuggestions = [];
+            for (let suggestion of responseJson.suggestions) {
+                updatedSuggestions.push({ activity: suggestion.activity, index: suggestion.index, latLng: suggestion.latLng, placeName: suggestion.placeName, averageRating: suggestion.averageRating || 0, userRating: ratingConversion.get(suggestion.userRating) || ratingConversion.get(0)!! })
+            }
+            setSuggestions(updatedSuggestions)
+        } catch {
+            toast.error("An error occurred while getting activity suggestions")
+        } finally {
+            setLoading(false)
         }
-        setSuggestions(updatedSuggestions)
-        setLoading(false)
+
     }
 
     if (firstLoad) {
@@ -38,9 +45,17 @@ export default function RatingPage({ stateObject }: {
     const setRating = async (rating: number) => {
         if (selectedSuggestion != undefined) {
             setLoading(true)
-            await fetch(`/api/setRating`, { method: "POST", body: JSON.stringify({ rating: rating, activity: selectedSuggestion.activity, index: selectedSuggestion.index }) })
-            setSelectedSuggestion(undefined)
-            setLoading(false)
+            try {
+                const response = await fetch(`/api/setRating`, { method: "POST", body: JSON.stringify({ rating: rating, activity: selectedSuggestion.activity, index: selectedSuggestion.index }) })
+                if (!response.ok) { throw new Error() }
+                toast.success("Activity rating set successfully")
+                setSelectedSuggestion(undefined)
+                await getSuggestions()
+            } catch {
+                toast.error("An error occured whilst setting activity rating")
+            } finally {
+                setLoading(false)
+            }
         }
     }
 
@@ -66,11 +81,11 @@ export default function RatingPage({ stateObject }: {
             ))}
         </div>}
         {selectedSuggestion && <div className='sub-page-button-container'>
-            <button className='button' onClick={() => { setSelectedSuggestion(undefined) }}>Choose different activity</button>
+            <button className='button' disabled={loading} onClick={() => { setSelectedSuggestion(undefined) }}>Choose different activity</button>
             {ratingOptions.map((option, index) => (
                 <button
                     key={index}
-                    onClick={async () => { await setRating(option[1]); getSuggestions(); }}
+                    onClick={async () => { await setRating(option[1]); }}
                     className='value-input-button'
                     disabled={loading}
                 >
@@ -83,6 +98,13 @@ export default function RatingPage({ stateObject }: {
 
 async function setGroupDestination(groupId: string, latLng: [number, number], activity: string) {
     if (latLng && (activity != "")) {
-        await fetch(`/api/setGroupDestinationAndActivity`, { method: "POST", body: JSON.stringify({ groupId: groupId, lat: latLng[0], lng: latLng[1], activity: activity }) })
+        try {
+            const response = await fetch(`/api/setGroupDestinationAndActivity`, { method: "POST", body: JSON.stringify({ groupId: groupId, lat: latLng[0], lng: latLng[1], activity: activity }) })
+            if (!response.ok) { throw new Error() }
+            toast.success("Activity and destination set successfully")
+        } catch {
+            toast.error("An error occured while setting activity and destination")
+        }
     }
+
 }

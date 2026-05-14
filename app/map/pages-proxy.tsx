@@ -6,6 +6,7 @@ import ClientMap from './client-map';
 import { createState, stateType } from './getSet';
 import ManageGroupPage from './manage-group-page';
 import RatingPage from './rating-page';
+import { toast, Toaster } from 'sonner';
 
 
 type pageChoice = "map" | "activity" | "availability" | "manageGroup";
@@ -73,21 +74,29 @@ export default function PagesProxy({ groupId }: { groupId: string }) {
                 </Suspense>
                 }
             </div>
+            <Toaster />
         </div>
     )
 }
 
 // Updates the state of the group for this component and its child components
 async function getGroupInformation(groupId: string, stateObject: stateType): Promise<void> {
-    const groupInformationResponse = await fetch(`api/getGroupInformation?groupId=${groupId}`);
-    return groupInformationResponse.json().then((groupInfo) => {
-        stateObject.users.setValue(groupInfo.users)
-        stateObject.arrivalTime.setValue(groupInfo.arrivalTime)
-        stateObject.destinationLatLng.setValue(groupInfo.destinationLatLng)
-        stateObject.placeName.setValue(groupInfo.placeName)
-        stateObject.ownerAccount.setValue(groupInfo.ownerAccount)
-        stateObject.activity.setValue(groupInfo.activity)
-        return;
-    });
+    try {
+        const groupInformationResponse = await fetch(`api/getGroupInformation?groupId=${groupId}`);
+        if (!groupInformationResponse.ok) { throw new Error() }
+        return groupInformationResponse.json().then((groupInfo) => {
+            stateObject.users.setValue(groupInfo.users)
+            stateObject.arrivalTime.setValue(groupInfo.arrivalTime)
+            stateObject.destinationLatLng.setValue(groupInfo.destinationLatLng)
+            stateObject.placeName.setValue(groupInfo.placeName)
+            stateObject.ownerAccount.setValue(groupInfo.ownerAccount)
+            stateObject.activity.setValue(groupInfo.activity)
+            toast.success("Current group information updated successfully")
+            return;
+        });
+    } catch {
+        toast.error("There was an error updating information for the current group")
+    }
+
 
 }

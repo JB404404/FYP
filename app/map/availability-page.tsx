@@ -1,6 +1,7 @@
 'use client'
 import { useState } from "react";
 import { stateType } from "./getSet";
+import { toast } from "sonner";
 
 export default function AvailabilityPage({ stateObject }: {
     stateObject: stateType
@@ -21,24 +22,37 @@ export default function AvailabilityPage({ stateObject }: {
 
     const getTimeFrames = async () => {
         setLoading(true)
-        setTimeFrames([])
-        const response = await fetch(`/api/getTimeFrames?groupId=${groupId}`)
-        const responseJson = await response.json()
-        const newTimeframes = (responseJson.timeFrames) as { time: string, averageRating: number, userRating: number }[];
-        newTimeframes.forEach((item) => {
-            item.userRating = availabilityConversion.get(item.userRating) as any;
-        })
-        setTimeFrames(responseJson.timeFrames)
-        setLoading(false)
+        try {
+            const response = await fetch(`/api/getTimeFrames?groupId=${groupId}`)
+            if (!response.ok) { throw new Error() }
+
+            const responseJson = await response.json()
+            const newTimeframes = (responseJson.timeFrames) as { time: string, averageRating: number, userRating: number }[];
+            newTimeframes.forEach((item) => {
+                item.userRating = availabilityConversion.get(item.userRating) as any;
+            })
+            setTimeFrames(responseJson.timeFrames)
+        } catch {
+            toast.error("An error occurred while loading time frames")
+        } finally {
+            setLoading(false)
+        }
     }
 
     const setAvailability = async (availability: number | undefined) => {
         if (availability != undefined) {
             setLoading(true)
-            await fetch(`/api/setAvailability`,
-                { method: "POST", body: JSON.stringify({ groupId: groupId, availability: availability, dateTime: selectedTimeFrame?.time }) })
-            setSelectedTimeFrame(undefined)
-            setLoading(false)
+            try {
+                const response = await fetch(`/api/setAvailability`, { method: "POST", body: JSON.stringify({ groupId: groupId, availability: availability, dateTime: selectedTimeFrame?.time }) })
+                if (!response.ok) { throw new Error() }
+                toast.success("Availability set successfully")
+                setSelectedTimeFrame(undefined)
+                await getTimeFrames
+            } catch {
+                toast.error("An error occured whilst setting availability")
+            } finally {
+                setLoading(false)
+            }
         }
     }
 
@@ -88,7 +102,7 @@ export default function AvailabilityPage({ stateObject }: {
             ))}</div>}
 
         {selectedTimeFrame && <div className='sub-page-button-container'>
-            <button className='button' onClick={() => { setSelectedTimeFrame(undefined) }}>Choose different time frame</button>
+            <button className='button' disabled={loading} onClick={() => { setSelectedTimeFrame(undefined) }}>Choose different time frame</button>
             {availabilityOptions.map((option, index) => (
                 <button
                     key={index}
@@ -104,14 +118,24 @@ export default function AvailabilityPage({ stateObject }: {
 
 async function setGroupArrivalTime(groupId: string, time: string | undefined) {
     if (time) {
-        await fetch(`/api/setGroupArrivalTime`,
-            { method: "POST", body: JSON.stringify({ groupId: groupId, arrivalTime: time }) })
+        try {
+            const response = await fetch(`/api/setGroupArrivalTime`, { method: "POST", body: JSON.stringify({ groupId: groupId, arrivalTime: time }) })
+            if (!response.ok) { throw new Error() }
+            toast.success("Arrival time set successfully")
+        } catch {
+            toast.error("An error occured while setting arrival time")
+        }
     }
 }
 
-function suggestGroupArrivalTime(groupId: string, time: string | undefined) {
+async function suggestGroupArrivalTime(groupId: string, time: string | undefined) {
     if (time) {
-        fetch(`/api/suggestGroupArrivalTime`,
-            { method: "POST", body: JSON.stringify({ groupId: groupId, arrivalTime: time }) })
+        try {
+            const response = await fetch(`/api/suggestGroupArrivalTime`, { method: "POST", body: JSON.stringify({ groupId: groupId, arrivalTime: time }) })
+            if (!response.ok) { throw new Error() }
+            toast.success("Arrival time suggested successfully")
+        } catch {
+            toast.error("An error occured while suggesting arrival time")
+        }
     }
 }

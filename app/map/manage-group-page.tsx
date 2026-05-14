@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { stateType } from "./getSet";
+import { toast } from "sonner";
 
 export default function ManageGroupPage({ stateObject }: {
     stateObject: stateType
@@ -25,44 +26,84 @@ export default function ManageGroupPage({ stateObject }: {
 
     const addUserToGroup = async (targetEmail: string) => {
         setLoading(true)
-        setUserEmails([])
-        await fetch(`/api/addUserToGroup`,
-            { method: "POST", body: JSON.stringify({ groupId: groupId, email: targetEmail }) }
-        )
-        setEmail("")
-        await getUsers()
-        setLoading(false)
+        try {
+            const response = await fetch(`/api/addUserToGroup`,
+                { method: "POST", body: JSON.stringify({ groupId: groupId, email: targetEmail }) }
+            )
+            if (!response.ok) { throw new Error() }
+            setEmail("")
+            toast.success("User successfully added to group")
+            await getUsers()
+        } catch {
+            toast.error("An error occured while adding user to group")
+        } finally {
+            setLoading(false)
+        }
+
     }
     const removeUserFromGroup = async (targetEmail: string) => {
         setLoading(true)
-        setUserEmails([])
-        await fetch(`/api/removeUserFromGroup`,
-            { method: "POST", body: JSON.stringify({ groupId: groupId, email: targetEmail }) })
-        setEmail("")
-        await getUsers()
-        setLoading(false)
+        try {
+            const response = await fetch(`/api/removeUserFromGroup`,
+                { method: "POST", body: JSON.stringify({ groupId: groupId, email: targetEmail }) })
+            if (!response.ok) { throw new Error() }
+            setEmail("")
+            toast.success("User successfully removed from group")
+            await getUsers()
+        } catch {
+            toast.error("An error occurred while removing user from group")
+        } finally {
+            setLoading(false)
+        }
+
     }
 
     const getRecommendedActivity = async (groupId: string) => {
         setLoading(true)
-        const response = await fetch(`/api/getRecommendedActivity?groupId=${groupId}`)
-        const responseJson = await response.json()
-        setRecommendedActivities(responseJson.topThree)
-        setLoading(false)
+        try {
+            const response = await fetch(`/api/getRecommendedActivity?groupId=${groupId}`)
+            if (!response.ok) { throw new Error() }
+            const responseJson = await response.json()
+            setRecommendedActivities(responseJson.topThree)
+            toast.success("Recommended activities found")
+        } catch {
+            toast.success("An error occured while calculating recommended activities")
+        } finally {
+            setLoading(false)
+        }
+
     }
 
     // updates both the group arrival time and the activity/destination for the group to match the provided values
     const setValues = async (item: { time: string, activity: string, location: [number, number], placeName: string | undefined }) => {
         setLoading(true)
-        await Promise.all([
-            fetch(`/api/setGroupArrivalTime`, { method: "POST", body: JSON.stringify({ groupId: groupId, arrivalTime: item.time }) }),
-            fetch(`/api/setGroupDestinationAndActivity`, { method: "POST", body: JSON.stringify({ groupId: groupId, lat: item.location[0], lng: item.location[1], activity: item.activity, placeName: item.placeName }) }),
-        ])
-        if (stateObject.updateGroupState) {
-            await stateObject.updateGroupState()
+        try {
+            const responses = await Promise.all([
+                fetch(`/api/setGroupArrivalTime`, { method: "POST", body: JSON.stringify({ groupId: groupId, arrivalTime: item.time }) }),
+                fetch(`/api/setGroupDestinationAndActivity`, { method: "POST", body: JSON.stringify({ groupId: groupId, lat: item.location[0], lng: item.location[1], activity: item.activity, placeName: item.placeName }) }),
+            ])
+            if (!responses[0].ok && !responses[1].ok) {
+                toast.error("An error occured whilst setting arrival time, activity and destination")
+                throw new Error()
+            }
+            else if (!responses[0].ok) {
+                toast.error("An error occured whilst setting arrival time")
+                toast.success("Successfully set the activity and destination")
+            }
+            else if (!responses[1].ok) {
+                toast.error("An error occured whilst setting activity and destination")
+                toast.success("Successfully set the arrival time")
+            } else {
+                toast.success("Successfully set the arrival time, activity and destination")
+            }
+            if (stateObject.updateGroupState) {
+                await stateObject.updateGroupState()
+            }
+            setRecommendedActivities([])
+        } finally {
+            setLoading(false)
         }
-        setRecommendedActivities([])
-        setLoading(false)
+
     }
 
     if (firstLoad) {
