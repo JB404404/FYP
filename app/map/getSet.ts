@@ -9,7 +9,7 @@ export type stateType = {
     placeName: getSet<string | undefined>,
     ownerAccount: getSet<boolean>,
     activity: getSet<string>,
-    updateGroupState: (undefined | (() => Promise<void>))
+    updateGroupState: (undefined | (() => Promise<{ users: string[], arrivalTime: string | undefined, destinationLatLng: [string, string] | undefined, placeName: string | undefined, ownerAccount: boolean, activity: string } | undefined>))
 }
 
 // defines the structure of a type containing the getter and setter of a 'useState'

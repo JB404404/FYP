@@ -18,10 +18,13 @@ export default function ManageGroupPage({ stateObject }: {
         setLoading(true)
         setUserEmails([])
         if (stateObject.updateGroupState) {
-            await stateObject.updateGroupState()
+            const groupJson = await stateObject.updateGroupState()
+            if (groupJson) {
+                setUserEmails(groupJson.users)
+            }
+            setLoading(false)
         }
-        setUserEmails(stateObject.users.value)
-        setLoading(false)
+
     }
 
     const addUserToGroup = async (targetEmail: string) => {

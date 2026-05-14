@@ -80,11 +80,11 @@ export default function PagesProxy({ groupId }: { groupId: string }) {
 }
 
 // Updates the state of the group for this component and its child components
-async function getGroupInformation(groupId: string, stateObject: stateType): Promise<void> {
+async function getGroupInformation(groupId: string, stateObject: stateType): Promise<{ users: string[], arrivalTime: string | undefined, destinationLatLng: [string, string] | undefined, placeName: string | undefined, ownerAccount: boolean, activity: string } | undefined> {
     try {
         const groupInformationResponse = await fetch(`api/getGroupInformation?groupId=${groupId}`);
         if (!groupInformationResponse.ok) { throw new Error() }
-        return groupInformationResponse.json().then((groupInfo) => {
+        return groupInformationResponse.json().then((groupInfo: { users: string[], arrivalTime: string | undefined, destinationLatLng: [string, string] | undefined, placeName: string | undefined, ownerAccount: boolean, activity: string }) => {
             stateObject.users.setValue(groupInfo.users)
             stateObject.arrivalTime.setValue(groupInfo.arrivalTime)
             stateObject.destinationLatLng.setValue(groupInfo.destinationLatLng)
@@ -92,7 +92,7 @@ async function getGroupInformation(groupId: string, stateObject: stateType): Pro
             stateObject.ownerAccount.setValue(groupInfo.ownerAccount)
             stateObject.activity.setValue(groupInfo.activity)
             toast.success("Current group information updated successfully")
-            return;
+            return groupInfo;
         });
     } catch {
         toast.error("There was an error updating information for the current group")
